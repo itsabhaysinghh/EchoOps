@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --card: #18181b;
+  --card-foreground: #f4f4f5;
+  --popover: #09090b;
+  --popover-foreground: #f4f4f5;
+  --primary: #6366f1;
+  --primary-foreground: #e0e7ff;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #6366f1;
+  --accent-foreground: #fafafa;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #6366f1;
+  --radius: 0.75rem;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(244, 55%, 15%, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, hsla(271, 76%, 15%, 0.3) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, hsla(220, 80%, 10%, 0.2) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism card utility */
+.glass-panel {
+  background: rgba(24, 24, 27, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background: rgba(9, 9, 11, 0.5);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  outline: none;
+}
+
+/* Pulsing red badge for critical bugs */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0px rgba(239, 68, 68, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.3);
+  }
+}
+
+.pulse-critical {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Micro-animations */
+.hover-glow:hover {
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.transition-all-custom {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
