@@ -198,6 +198,7 @@ class FeedbackPipeline:
         self.db.add(new_issue)
         self.db.commit()
         self.db.refresh(new_issue)
+        self.send_slack_notification(new_issue)
         return new_issue
 
     def get_health_status_label(self, score: float) -> str:
@@ -285,3 +286,55 @@ class FeedbackPipeline:
         self.db.commit()
         self.db.refresh(fb)
         return fb
+
+    def send_slack_notification(self, issue: Issue):
+        try:
+            from backend.app.models import IntegrationSetting
+            setting = self.db.query(IntegrationSetting).filter(IntegrationSetting.tool_name == "Slack").first()
+            if not setting or not setting.is_connected:
+                return
+                
+            webhook_url = setting.config_data.get("webhook")
+            if not webhook_url or webhook_url == "https://hooks.slack.com/services/...":
+                return
+                
+            # Construct a beautiful slack block message
+            payload = {
+                "blocks": [
+                    {
+                        "type": "header",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "🚨 New AI-Identified Issue Detected"
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Title:* {issue.title}\n*Priority:* `{issue.priority}` | *Health Score:* `{issue.health_score}/100`\n*Assigned Team:* `{issue.assigned_team}`"
+                        }
+                    },
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": f"*Summary:*\n{issue.summary}"
+                        }
+                    },
+                    {
+                        "type": "context",
+                        "elements": [
+                            {
+                                "type": "mrkdwn",
+                                "text": f"View issue details: <http://localhost:3000/issues/{issue.id}|# {issue.id}>"
+                            }
+                        ]
+                    }
+                ]
+            }
+            
+            import requests
+            requests.post(webhook_url, json=payload, timeout=5)
+        except Exception as e:
+            print(f"Failed to send Slack notification: {e}")

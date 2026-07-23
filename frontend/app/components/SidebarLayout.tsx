@@ -20,6 +20,36 @@ import {
   Zap
 } from 'lucide-react';
 
+const DynamicLogo = ({ imgUrl, label }: { imgUrl: string; label: string }) => {
+  const [error, setError] = useState(false);
+
+  if (!label || label.trim() === "") return null;
+
+  return (
+    <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/80 px-3 py-1.5 rounded-xl transition duration-200">
+      <div className="w-5.5 h-5.5 rounded-md overflow-hidden flex items-center justify-center bg-zinc-850 border border-zinc-800 shrink-0">
+        {error ? (
+          <div className="w-full h-full bg-gradient-to-tr from-zinc-800 to-zinc-700 flex items-center justify-center">
+            <span className="text-[10px] font-extrabold text-zinc-400 font-mono uppercase">
+              {label.substring(0, 2)}
+            </span>
+          </div>
+        ) : (
+          <img 
+            src={imgUrl} 
+            alt={label} 
+            className="w-full h-full object-contain p-0.5 bg-white"
+            onError={() => setError(true)}
+          />
+        )}
+      </div>
+      <span className="font-bold text-[10px] uppercase tracking-wider text-zinc-300 font-mono">
+        {label}
+      </span>
+    </div>
+  );
+};
+
 interface SidebarLayoutProps {
   children: React.ReactNode;
 }
@@ -39,13 +69,23 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     { id: 3, type: 'health', text: 'Health Index changed from 85 to 64', time: '3h ago', read: true }
   ]);
 
-  // Sync role and workspace on load
+  // Sync role, workspace, and search query on load/navigation
   useEffect(() => {
     const savedRole = localStorage.getItem('echoops_role');
     if (savedRole) setUserRole(savedRole);
     const savedWS = localStorage.getItem('echoops_workspace');
     if (savedWS) setWorkspace(savedWS);
-  }, []);
+
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const q = params.get('search');
+      if (q) {
+        setSearchQuery(q);
+      } else {
+        setSearchQuery('');
+      }
+    }
+  }, [pathname]);
 
   const handleRoleChange = (role: string) => {
     setUserRole(role);
@@ -186,6 +226,39 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {/* Action buttons */}
           <div className="flex items-center gap-4">
             
+            {/* Dynamic Company Logo */}
+            {(() => {
+              const target = searchQuery || workspace;
+              const cleanTarget = target.trim();
+              if (!cleanTarget) return null;
+              
+              const companyName = cleanTarget.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
+              if (!companyName) return null;
+              
+              const brandDomains: { [key: string]: string } = {
+                swiggy: 'swiggy.com',
+                uber: 'uber.com',
+                zomato: 'zomato.com',
+                netflix: 'netflix.com',
+                google: 'google.com',
+                apple: 'apple.com',
+                microsoft: 'microsoft.com',
+                slack: 'slack.com',
+                github: 'github.com',
+                jira: 'atlassian.com',
+                trello: 'trello.com',
+                linear: 'linear.app',
+                clickup: 'clickup.com',
+                acme: 'acme.com'
+              };
+              
+              const cleanName = companyName.toLowerCase();
+              const domain = brandDomains[cleanName] || `${cleanName}.com`;
+              const logoUrl = `https://logo.clearbit.com/${domain}`;
+              
+              return <DynamicLogo imgUrl={logoUrl} label={companyName} key={companyName} />;
+            })()}
+
             {/* Notification drop */}
             <div className="relative">
               <button 

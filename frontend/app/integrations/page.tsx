@@ -30,6 +30,8 @@ export default function Integrations() {
   const [configuringTool, setConfiguringTool] = useState<string | null>(null);
   const [configInput1, setConfigInput1] = useState('');
   const [configInput2, setConfigInput2] = useState('');
+  const [configInput3, setConfigInput3] = useState('');
+  const [configInput4, setConfigInput4] = useState('');
 
   const fetchIntegrations = async () => {
     try {
@@ -62,12 +64,33 @@ export default function Integrations() {
   const openConfigModal = (toolName: string) => {
     setConfiguringTool(toolName);
     const item = integrations.find(i => i.tool_name === toolName);
-    if (item && item.is_connected) {
-      setConfigInput1(Object.values(item.config_data)[0] as string || '');
-      setConfigInput2(Object.values(item.config_data)[1] as string || '');
+    if (item && item.is_connected && item.config_data) {
+      if (toolName === 'Jira') {
+        setConfigInput1(item.config_data.workspace || '');
+        setConfigInput2(item.config_data.project || '');
+        setConfigInput3(item.config_data.email || '');
+        setConfigInput4(item.config_data.token || '');
+      } else if (toolName === 'GitHub') {
+        setConfigInput1(item.config_data.repo || '');
+        setConfigInput2(item.config_data.pat || '');
+        setConfigInput3('');
+        setConfigInput4('');
+      } else if (toolName === 'Slack') {
+        setConfigInput1(item.config_data.webhook || '');
+        setConfigInput2('');
+        setConfigInput3('');
+        setConfigInput4('');
+      } else {
+        setConfigInput1(Object.values(item.config_data)[0] as string || '');
+        setConfigInput2('');
+        setConfigInput3('');
+        setConfigInput4('');
+      }
     } else {
       setConfigInput1('');
       setConfigInput2('');
+      setConfigInput3('');
+      setConfigInput4('');
     }
   };
 
@@ -79,8 +102,11 @@ export default function Integrations() {
     if (configuringTool === 'Jira') {
       configData.workspace = configInput1;
       configData.project = configInput2;
+      configData.email = configInput3;
+      configData.token = configInput4;
     } else if (configuringTool === 'GitHub') {
       configData.repo = configInput1;
+      configData.pat = configInput2;
     } else if (configuringTool === 'Slack') {
       configData.webhook = configInput1;
     } else {
@@ -267,19 +293,54 @@ export default function Integrations() {
                         className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase">Jira account email</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={configInput3}
+                        onChange={(e) => setConfigInput3(e.target.value)}
+                        placeholder="e.g. engineering@acme.io" 
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase">Jira API Token</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={configInput4}
+                        onChange={(e) => setConfigInput4(e.target.value)}
+                        placeholder="Atlassian account API token" 
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
+                      />
+                    </div>
                   </>
                 ) : configuringTool === 'GitHub' ? (
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase">GitHub Repository Name</label>
-                    <input 
-                      type="text" 
-                      required
-                      value={configInput1}
-                      onChange={(e) => setConfigInput1(e.target.value)}
-                      placeholder="e.g. acme-saas/echoops-feedback" 
-                      className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase">GitHub Repository Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={configInput1}
+                        onChange={(e) => setConfigInput1(e.target.value)}
+                        placeholder="e.g. acme-saas/echoops-feedback" 
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-zinc-400 font-bold uppercase">Personal Access Token (PAT)</label>
+                      <input 
+                        type="password" 
+                        required
+                        value={configInput2}
+                        onChange={(e) => setConfigInput2(e.target.value)}
+                        placeholder="ghp_..." 
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-xs text-zinc-200 focus:outline-none"
+                      />
+                    </div>
+                  </>
                 ) : configuringTool === 'Slack' ? (
                   <div className="space-y-1.5">
                     <label className="text-[10px] text-zinc-400 font-bold uppercase">Incoming Webhook URL</label>
