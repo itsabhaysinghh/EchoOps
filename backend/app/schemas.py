@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+
 
 # Auth / Onboarding
 class CompanyCreate(BaseModel):
@@ -55,9 +56,10 @@ class UserResponse(BaseModel):
 
 # Feedback
 class FeedbackCreate(BaseModel):
-    source: str
-    original_text: str
+    source: str = Field(..., max_length=100)
+    original_text: str = Field(..., max_length=10000)
     meta_info: Optional[Dict[str, Any]] = None
+
 
 class FeedbackResponse(BaseModel):
     id: int
@@ -205,27 +207,30 @@ class AudioUploadResponse(BaseModel):
     suggested_priority: str
 
 # Auth Schemas
+
 class EmailPasswordLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., max_length=128)
 
 class UserRegisterRequest(BaseModel):
     email: EmailStr
-    password: str
-    name: str
+    password: str = Field(..., min_length=4, max_length=128)
+    name: str = Field(..., min_length=1, max_length=100)
     role: Optional[str] = "Developer"
-    company_name: Optional[str] = None
+    company_name: Optional[str] = Field(None, max_length=100)
+    honeypot: Optional[str] = None  # Anti-bot honeypot field (must remain empty)
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
-    code: str
-    new_password: str
+    code: str = Field(..., max_length=10)
+    new_password: str = Field(..., min_length=4, max_length=128)
 
 class GoogleLoginRequest(BaseModel):
-    credential: str
+    credential: str = Field(..., max_length=4096)
+
 
 class AuthTokenResponse(BaseModel):
     access_token: str

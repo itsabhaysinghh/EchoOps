@@ -10,26 +10,27 @@ from backend.app.api.auth_dep import get_current_user
 router = APIRouter(prefix="/api/issues", tags=["Issues"], dependencies=[Depends(get_current_user)])
 
 @router.get("", response_model=List[IssueResponse])
-def get_all_issues(db: Session = Depends(get_db)):
-    return db.query(Issue).order_by(Issue.health_score.desc()).all()
+def get_all_issues(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    return db.query(Issue).filter(Issue.workspace_id == current_user.workspace_id).order_by(Issue.health_score.desc()).all()
 
 @router.get("/features/all", response_model=List[FeatureRequestResponse])
-def get_all_features(db: Session = Depends(get_db)):
-    return db.query(FeatureRequest).order_by(FeatureRequest.requests_count.desc()).all()
+def get_all_features(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    return db.query(FeatureRequest).filter(FeatureRequest.workspace_id == current_user.workspace_id).order_by(FeatureRequest.requests_count.desc()).all()
 
 
 @router.get("/{issue_id}", response_model=IssueResponse)
-def get_issue(issue_id: int, db: Session = Depends(get_db)):
-    issue = db.query(Issue).filter(Issue.id == issue_id).first()
+def get_issue(issue_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    issue = db.query(Issue).filter(Issue.id == issue_id, Issue.workspace_id == current_user.workspace_id).first()
     if not issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise HTTPException(status_code=404, detail="Issue not found or unauthorized")
     return issue
 
 @router.put("/{issue_id}", response_model=IssueResponse)
-def update_issue(issue_id: int, issue_in: IssueUpdate, db: Session = Depends(get_db)):
-    issue = db.query(Issue).filter(Issue.id == issue_id).first()
+def update_issue(issue_id: int, issue_in: IssueUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    issue = db.query(Issue).filter(Issue.id == issue_id, Issue.workspace_id == current_user.workspace_id).first()
     if not issue:
-        raise HTTPException(status_code=404, detail="Issue not found")
+        raise HTTPException(status_code=404, detail="Issue not found or unauthorized")
+
         
     update_data = issue_in.dict(exclude_unset=True)
     for key, value in update_data.items():

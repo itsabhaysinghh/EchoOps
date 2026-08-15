@@ -48,23 +48,32 @@ def get_integrations(db: Session = Depends(get_db)):
             )
     return result
 
+from backend.app.auth_utils import encrypt_sensitive_data, decrypt_sensitive_data
+
 @router.post("/connect", response_model=IntegrationResponse)
 def connect_integration(conn: IntegrationConnect, db: Session = Depends(get_db)):
+    # Encrypt secret tokens in config_data before storing
+    secured_config = conn.config_data.copy()
+    for key in ["token", "secret", "api_key", "webhook"]:
+        if key in secured_config and isinstance(secured_config[key], str):
+            secured_config[key] = encrypt_sensitive_data(secured_config[key])
+
     setting = db.query(IntegrationSetting).filter(IntegrationSetting.tool_name == conn.tool_name).first()
     if setting:
         setting.is_connected = True
-        setting.config_data = conn.config_data
+        setting.config_data = secured_config
         setting.connected_at = datetime.datetime.utcnow()
     else:
         setting = IntegrationSetting(
             tool_name=conn.tool_name,
-            config_data=conn.config_data,
+            config_data=secured_config,
             is_connected=True,
             connected_at=datetime.datetime.utcnow()
         )
         db.add(setting)
     db.commit()
     db.refresh(setting)
+
 
     # If this is a feedback channel link, automatically trigger review scanning & issue creation
     url = conn.config_data.get("url") or conn.config_data.get("link")

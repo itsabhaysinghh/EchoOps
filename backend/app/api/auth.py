@@ -28,6 +28,13 @@ def register(req: UserRegisterRequest, db: Session = Depends(get_db)):
     Register a new user account with a unique email address.
     Strictly prevents duplicate user account creation for any existing email address.
     """
+    # Anti-bot honeypot check
+    if req.honeypot:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Automated request rejected by bot protection."
+        )
+        
     clean_email = req.email.strip().lower()
     
     # Check if an account already exists for this email address (case-insensitive check)
@@ -59,15 +66,19 @@ def register(req: UserRegisterRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(workspace)
         
+    # Prevent mass-assignment role tampering; force standard Developer role on self-registration
+    assigned_role = "Developer"
+    
     hashed_pw = get_password_hash(req.password)
     user = User(
         email=clean_email,
         name=req.name.strip(),
-        role=req.role or "Developer",
+        role=assigned_role,
         company_id=company.id,
         workspace_id=workspace.id,
         hashed_password=hashed_pw
     )
+
     db.add(user)
     db.commit()
     db.refresh(user)

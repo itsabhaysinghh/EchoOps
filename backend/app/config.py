@@ -13,6 +13,17 @@ class Settings(BaseSettings):
     SLACK_WEBHOOK_URL: str = ""
     TEAMS_WEBHOOK_URL: str = ""
     
+    # Security & Authentication Settings
+    SECRET_KEY: str = "echoops_secret_key_prod_default_change_in_env_394827"
+    ENCRYPTION_KEY: str = "echoops_data_enc_key_32bytes_sec"
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8000"
+    ]
+    RATE_LIMIT_LOGIN_PER_MINUTE: int = 10
+    
     # Google OAuth Credentials
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
@@ -21,3 +32,4 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 settings = Settings()
+
