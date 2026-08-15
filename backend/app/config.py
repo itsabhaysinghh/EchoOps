@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     SLACK_WEBHOOK_URL: str = ""
     TEAMS_WEBHOOK_URL: str = ""
     
+    # Google OAuth Credentials
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    
     class Config:
         env_file = ".env"
 

@@ -31,24 +31,21 @@ export default function FeatureRequests() {
 
   const fetchFeatures = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/reports/weekly');
-      const data = await res.json();
-      // Calculate dynamic array or use seeded database structure
-      const dbRes = await fetch('http://localhost:8000/api/issues'); // Or make standard route
-      // For fallback and cleanliness, fetch from FastAPI /api/issues or seed locally
-      throw new Error("Trigger mock fallback for clean mock arrays");
+      const res = await fetch('http://localhost:8000/api/issues/features/all');
+      if (res.ok) {
+        const data = await res.json();
+        setFeatures(data || []);
+      } else {
+        setFeatures([]);
+      }
     } catch (err) {
-      setFeatures([
-        { id: 1, title: "Dark Mode Support", description: "Add native dark mode configuration across web invoices, notifications, and mobile dashboards.", requests_count: 1284, category: "Feature Request", status: "Planned", created_at: "" },
-        { id: 2, title: "Offline Mode", description: "Allow field agents to capture offline voice inputs and cache customer details.", requests_count: 813, category: "Feature Request", status: "Proposed", created_at: "" },
-        { id: 3, title: "Apple Pay Web Checkout", description: "Extend Apple Pay support directly inside browser invoices.", requests_count: 501, category: "Feature Request", status: "In Development", created_at: "" },
-        { id: 4, title: "Full Text search index", description: "Filter feedback using Lucene query index.", requests_count: 320, category: "Feature Request", status: "Released", created_at: "" },
-        { id: 5, title: "Google OAuth Lockouts", description: "Report that authentication tokens expire too early.", requests_count: 42, category: "Bug", status: "In Development", created_at: "" }
-      ]);
+      console.warn('API error fetching features:', err);
+      setFeatures([]);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchFeatures();

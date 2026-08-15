@@ -4,6 +4,7 @@ from backend.app.database import SessionLocal, Base, engine
 from backend.app.models import (
     Company, Workspace, User, Issue, Feedback, IssueComment, FeatureRequest, Release, IntegrationSetting
 )
+from backend.app.auth_utils import get_password_hash
 
 def seed_database(db: Session):
     # Drop and recreate tables to ensure a clean slate
@@ -31,13 +32,13 @@ def seed_database(db: Session):
 
     # 2. Seed Users with distinct Roles
     users = [
-        User(email="superadmin@acme.io", name="Sarah Connor", role="Super Admin", company_id=company.id, workspace_id=workspace.id),
-        User(email="admin@acme.io", name="John Connor", role="Admin", company_id=company.id, workspace_id=workspace.id),
-        User(email="pm@acme.io", name="Rahul Sharma", role="Product Manager", company_id=company.id, workspace_id=workspace.id),
-        User(email="em@acme.io", name="Marcus Wright", role="Engineering Manager", company_id=company.id, workspace_id=workspace.id),
-        User(email="dev@acme.io", name="Kyle Reese", role="Developer", company_id=company.id, workspace_id=workspace.id),
-        User(email="cs@acme.io", name="Dani Ramos", role="Customer Support", company_id=company.id, workspace_id=workspace.id),
-        User(email="viewer@acme.io", name="Grace Harper", role="Viewer", company_id=company.id, workspace_id=workspace.id)
+        User(email="superadmin@acme.io", name="Sarah Connor", role="Super Admin", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="admin@acme.io", name="John Connor", role="Admin", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="pm@acme.io", name="Rahul Sharma", role="Product Manager", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="em@acme.io", name="Marcus Wright", role="Engineering Manager", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="dev@acme.io", name="Kyle Reese", role="Developer", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="cs@acme.io", name="Dani Ramos", role="Customer Support", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123")),
+        User(email="viewer@acme.io", name="Grace Harper", role="Viewer", company_id=company.id, workspace_id=workspace.id, hashed_password=get_password_hash("password123"))
     ]
     for u in users:
         db.add(u)
@@ -279,9 +280,25 @@ def seed_database(db: Session):
 
     print("Database seeded successfully with premium mock data.")
 
+def clear_demo_data(db: Session):
+    """
+    Purges all demo issues, feedbacks, comments, feature requests, releases, and integration settings,
+    leaving a clean workspace ready for real user testing and live data ingestion.
+    Preserves user accounts so logged in users stay authenticated.
+    """
+    db.query(Feedback).delete()
+    db.query(IssueComment).delete()
+    db.query(Issue).delete()
+    db.query(FeatureRequest).delete()
+    db.query(Release).delete()
+    db.query(IntegrationSetting).delete()
+    db.commit()
+    print("All demo data cleared successfully. Database is now clean and ready for real data.")
+
 if __name__ == "__main__":
     db = SessionLocal()
     try:
         seed_database(db)
     finally:
         db.close()
+

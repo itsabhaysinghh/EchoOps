@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from backend.app.database import get_db
 from backend.app.models import Issue, FeatureRequest, Feedback
 import datetime
+from backend.app.api.auth_dep import get_current_user
 
-router = APIRouter(prefix="/api/reports", tags=["Reports"])
+router = APIRouter(prefix="/api/reports", tags=["Reports"], dependencies=[Depends(get_current_user)])
 
 @router.get("/weekly")
 def get_weekly_report(db: Session = Depends(get_db)):

@@ -5,8 +5,9 @@ import datetime
 from backend.app.database import get_db
 from backend.app.models import Company, Workspace, User, IntegrationSetting
 from backend.app.schemas import CompanyCreate, CompanyResponse, WorkspaceCreate, WorkspaceResponse, UserInvite, UserResponse
+from backend.app.api.auth_dep import get_current_user
 
-router = APIRouter(prefix="/api/onboarding", tags=["Onboarding"])
+router = APIRouter(prefix="/api/onboarding", tags=["Onboarding"], dependencies=[Depends(get_current_user)])
 
 @router.post("/company", response_model=CompanyResponse)
 def create_company(company_in: CompanyCreate, db: Session = Depends(get_db)):
@@ -37,6 +38,8 @@ def create_workspace(workspace_in: WorkspaceCreate, db: Session = Depends(get_db
     db.refresh(workspace)
     return workspace
 
+from sqlalchemy import func
+
 @router.post("/invite", response_model=List[UserResponse])
 def invite_members(company_id: int, workspace_id: int, invites: List[UserInvite], db: Session = Depends(get_db)):
     company = db.query(Company).filter(Company.id == company_id).first()
@@ -45,19 +48,20 @@ def invite_members(company_id: int, workspace_id: int, invites: List[UserInvite]
         
     invited_users = []
     for inv in invites:
-        # Check if user already exists
-        existing = db.query(User).filter(User.email == inv.email).first()
+        clean_email = inv.email.strip().lower()
+        # Check if user already exists (case-insensitive)
+        existing = db.query(User).filter(func.lower(User.email) == clean_email).first()
         if existing:
-            # Re-associate or skip
+            # Re-associate existing user without creating a duplicate account
             existing.company_id = company_id
             existing.workspace_id = workspace_id
             existing.role = inv.role
             db.commit()
             invited_users.append(existing)
         else:
-            name_part = inv.email.split("@")[0].title()
+            name_part = clean_email.split("@")[0].title()
             new_user = User(
-                email=inv.email,
+                email=clean_email,
                 name=name_part,
                 role=inv.role,
                 company_id=company_id,
@@ -69,6 +73,7 @@ def invite_members(company_id: int, workspace_id: int, invites: List[UserInvite]
             invited_users.append(new_user)
             
     return invited_users
+
 
 @router.post("/connect-source")
 def connect_source(source_name: str, db: Session = Depends(get_db)):

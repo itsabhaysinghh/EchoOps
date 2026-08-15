@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.config import settings
-from backend.app.api import onboarding, feedback, issues, chat, reports, integrations
+from backend.app.api import onboarding, feedback, issues, chat, reports, integrations, auth, admin, instagram, app_stores
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
@@ -15,12 +15,16 @@ app.add_middleware(
 )
 
 # Include API Routers
+app.include_router(auth.router)
 app.include_router(onboarding.router)
 app.include_router(feedback.router)
 app.include_router(issues.router)
 app.include_router(chat.router)
 app.include_router(reports.router)
 app.include_router(integrations.router)
+app.include_router(admin.router)
+app.include_router(instagram.router)
+app.include_router(app_stores.router)
 
 @app.get("/")
 def read_root():

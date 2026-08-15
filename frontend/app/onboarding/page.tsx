@@ -25,6 +25,14 @@ export default function OnboardingPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Protect route - redirect if not logged in
+  React.useEffect(() => {
+    const loggedIn = localStorage.getItem('echoops_logged_in');
+    if (!loggedIn) {
+      router.push('/login');
+    }
+  }, [router]);
+
   // Step 1: Company Info
   const [companyName, setCompanyName] = useState('Acme Corp');
   const [industry, setIndustry] = useState('Enterprise software');
@@ -42,8 +50,16 @@ export default function OnboardingPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newRole, setNewRole] = useState('Developer');
 
-  // Step 4: Data Sources & Integrations
-  const [connectedSources, setConnectedSources] = useState<string[]>(['Google Play Store', 'Jira']);
+  // Step 4: Data Sources & Link Pasting
+  const [playStoreUrl, setPlayStoreUrl] = useState('');
+  const [appStoreUrl, setAppStoreUrl] = useState('');
+  const [instagramUrl, setInstagramUrl] = useState('');
+
+  const fillSampleLinks = () => {
+    setPlayStoreUrl('https://play.google.com/store/apps/details?id=com.acme.feedback');
+    setAppStoreUrl('https://apps.apple.com/us/app/acme-desk/id987654321');
+    setInstagramUrl('https://www.instagram.com/p/C-checkout-crash-reports/');
+  };
 
   const addInvite = () => {
     if (newEmail.trim() && newEmail.includes('@')) {
@@ -54,14 +70,6 @@ export default function OnboardingPage() {
 
   const removeInvite = (index: number) => {
     setInvites(invites.filter((_, i) => i !== index));
-  };
-
-  const toggleSource = (source: string) => {
-    if (connectedSources.includes(source)) {
-      setConnectedSources(connectedSources.filter(s => s !== source));
-    } else {
-      setConnectedSources([...connectedSources, source]);
-    }
   };
 
   const handleNextStep = async () => {
@@ -82,11 +90,17 @@ export default function OnboardingPage() {
       setStep(4);
     } else if (step === 4) {
       setLoading(true);
+      const token = localStorage.getItem('echoops_token') || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       try {
         // Step 1 API Call: Create Company
         const compRes = await fetch('http://localhost:8000/api/onboarding/company', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ name: companyName, industry, website, timezone })
         });
         if (!compRes.ok) throw new Error('Failed to create company on API server');
@@ -95,7 +109,7 @@ export default function OnboardingPage() {
         // Step 2 API Call: Create Workspace
         const wsRes = await fetch('http://localhost:8000/api/onboarding/workspace', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({ name: workspaceName, company_id: companyData.id })
         });
         if (!wsRes.ok) throw new Error('Failed to create workspace on API server');
@@ -105,16 +119,29 @@ export default function OnboardingPage() {
         if (invites.length > 0) {
           await fetch(`http://localhost:8000/api/onboarding/invite?company_id=${companyData.id}&workspace_id=${wsData.id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(invites)
           });
         }
         
-        // Step 4 API Call: Connect integrations
-        for (const src of connectedSources) {
-          await fetch(`http://localhost:8000/api/onboarding/connect-source?source_name=${encodeURIComponent(src)}`, {
-            method: 'POST'
-          });
+        // Step 4 API Call: Connect & Scan Pasted Links
+        const sourcesToConnect = [
+          { name: 'Google Play Store', url: playStoreUrl },
+          { name: 'Apple App Store', url: appStoreUrl },
+          { name: 'Instagram', url: instagramUrl }
+        ];
+
+        for (const src of sourcesToConnect) {
+          if (src.url.trim()) {
+            await fetch('http://localhost:8000/api/integrations/connect', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                tool_name: src.name,
+                config_data: { url: src.url.trim(), connected_at: new Date().toISOString() }
+              })
+            });
+          }
         }
         
         // Save preferences locally
@@ -125,8 +152,7 @@ export default function OnboardingPage() {
         // Redirect to Dashboard
         router.push('/');
       } catch (err) {
-        console.error(err);
-        // Save locally anyway as fallback so the prototype is testable even offline
+        console.error('Onboarding submission warning:', err);
         localStorage.setItem('echoops_company', companyName);
         localStorage.setItem('echoops_workspace', workspaceName);
         localStorage.setItem('echoops_onboarding_completed', 'true');
@@ -136,6 +162,7 @@ export default function OnboardingPage() {
       }
     }
   };
+
 
   const stepsList = [
     { num: 1, label: 'Company Profile', icon: Building2 },
@@ -166,7 +193,10 @@ export default function OnboardingPage() {
         
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-300 bg-clip-text text-transparent">
+          <div className="inline-flex w-14 h-14 rounded-2xl bg-zinc-950/80 items-center justify-center p-2 border border-indigo-500/30 shadow-xl shadow-purple-500/20 mb-2 overflow-hidden">
+            <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Welcome to EchoOps
           </h1>
           <p className="text-sm text-zinc-400 mt-2">
@@ -375,52 +405,75 @@ export default function OnboardingPage() {
             </div>
           )}
 
-          {/* STEP 4: Connect Data Sources */}
+          {/* STEP 4: Paste Application & Social Feedback Links */}
           {step === 4 && (
             <div className="space-y-6">
-              <div className="border-b border-zinc-800/50 pb-4 mb-2">
-                <h2 className="text-xl font-bold text-zinc-200">Step 4: Connect Customer Feedback Channels</h2>
-                <p className="text-xs text-zinc-500 mt-1">Select the tools you want to link. Feedback pipeline runs automatically upon integration setup.</p>
+              <div className="border-b border-zinc-800/50 pb-4 mb-2 flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-bold text-zinc-200">Step 4: Paste Feedback Channel Links</h2>
+                  <p className="text-xs text-zinc-500 mt-1">Paste your Play Store, App Store, or Instagram links. EchoOps automatically scans reviews and clusters recent error spikes.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fillSampleLinks}
+                  className="px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/30 hover:bg-indigo-500/20 text-indigo-300 text-xs font-semibold rounded-lg transition"
+                >
+                  ⚡ Auto-Fill Sample Links
+                </button>
               </div>
 
-              <div className="space-y-6 max-h-[300px] overflow-y-auto pr-2">
-                {integrationCategories.map((cat) => (
-                  <div key={cat.title} className="space-y-3">
-                    <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{cat.title}</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      {cat.sources.map((src) => {
-                        const isConnected = connectedSources.includes(src);
-                        return (
-                          <div
-                            key={src}
-                            onClick={() => toggleSource(src)}
-                            className={`p-4 rounded-xl border cursor-pointer select-none transition flex flex-col justify-between h-24 ${
-                              isConnected
-                                ? 'bg-indigo-600/10 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.15)]'
-                                : 'bg-zinc-900/60 border-zinc-850 hover:border-zinc-700/85 hover:bg-zinc-900/80'
-                            }`}
-                          >
-                            <div className="flex justify-between items-start gap-2 w-full">
-                              <span className="text-xs font-semibold text-zinc-200">{src}</span>
-                              <IntegrationIcon name={src} className="w-5 h-5 text-indigo-400 shrink-0" />
-                            </div>
-                            <div className="flex justify-between items-center mt-2">
-                              <span className={`text-[10px] uppercase font-bold tracking-wider ${isConnected ? 'text-indigo-400' : 'text-zinc-500'}`}>
-                                {isConnected ? 'Connected' : 'Disconnect'}
-                              </span>
-                              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${isConnected ? 'bg-indigo-600 text-white' : 'border border-zinc-800'}`}>
-                                {isConnected && <Check className="w-3.5 h-3.5" />}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              <div className="space-y-4">
+                {/* Google Play Store Link */}
+                <div className="space-y-1.5 bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/80">
+                  <div className="flex items-center gap-2">
+                    <IntegrationIcon name="Google Play Store" className="w-5 h-5 text-indigo-400" />
+                    <label className="text-xs font-bold text-zinc-200">Google Play Store App URL</label>
                   </div>
-                ))}
+                  <input
+                    type="url"
+                    value={playStoreUrl}
+                    onChange={(e) => setPlayStoreUrl(e.target.value)}
+                    placeholder="https://play.google.com/store/apps/details?id=com.yourcompany.app"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 block">Ingests Play Store ratings, Android device model logs, and review sentiment.</span>
+                </div>
+
+                {/* Apple App Store Link */}
+                <div className="space-y-1.5 bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/80">
+                  <div className="flex items-center gap-2">
+                    <IntegrationIcon name="Apple App Store" className="w-5 h-5 text-indigo-400" />
+                    <label className="text-xs font-bold text-zinc-200">Apple App Store App URL</label>
+                  </div>
+                  <input
+                    type="url"
+                    value={appStoreUrl}
+                    onChange={(e) => setAppStoreUrl(e.target.value)}
+                    placeholder="https://apps.apple.com/us/app/your-app-name/id123456789"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 block">Ingests iOS App Store user ratings, crash reports, and version trends.</span>
+                </div>
+
+                {/* Instagram Post / Profile Link */}
+                <div className="space-y-1.5 bg-zinc-950/60 p-4 rounded-xl border border-zinc-800/80">
+                  <div className="flex items-center gap-2">
+                    <IntegrationIcon name="Instagram" className="w-5 h-5 text-indigo-400" />
+                    <label className="text-xs font-bold text-zinc-200">Instagram Post / Profile URL</label>
+                  </div>
+                  <input
+                    type="url"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://www.instagram.com/p/C-your-post-id/"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                  />
+                  <span className="text-[10px] text-zinc-500 block">Scans Instagram comments for bug reports, customer complaints, and emotion analysis.</span>
+                </div>
               </div>
             </div>
           )}
+
 
           {/* Stepper Footer actions */}
           <div className="flex justify-between items-center pt-6 mt-8 border-t border-zinc-800/40">

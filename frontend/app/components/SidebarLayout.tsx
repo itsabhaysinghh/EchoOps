@@ -17,7 +17,8 @@ import {
   ChevronDown,
   User,
   ShieldCheck,
-  Zap
+  Zap,
+  LogOut
 } from 'lucide-react';
 
 const DynamicLogo = ({ imgUrl, label }: { imgUrl: string; label: string }) => {
@@ -61,6 +62,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   // Workspace and User state (synced with localStorage or mock)
   const [workspace, setWorkspace] = useState('Acme Workspace');
   const [userRole, setUserRole] = useState('Super Admin');
+  const [userName, setUserName] = useState('Rahul Sharma');
+  const [userEmail, setUserEmail] = useState('rahul@acme.io');
+  const [userPicture, setUserPicture] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([
@@ -71,10 +75,26 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // Sync role, workspace, and search query on load/navigation
   useEffect(() => {
+    const loggedIn = localStorage.getItem('echoops_logged_in');
+    if (!loggedIn && pathname !== '/login') {
+      router.push('/login');
+      return;
+    }
+
     const savedRole = localStorage.getItem('echoops_role');
     if (savedRole) setUserRole(savedRole);
     const savedWS = localStorage.getItem('echoops_workspace');
     if (savedWS) setWorkspace(savedWS);
+    const savedEmail = localStorage.getItem('echoops_user_email');
+    if (savedEmail) setUserEmail(savedEmail);
+    const savedName = localStorage.getItem('echoops_user_name');
+    if (savedName) setUserName(savedName);
+    const savedPicture = localStorage.getItem('echoops_user_picture');
+    if (savedPicture) {
+      setUserPicture(savedPicture);
+    } else {
+      setUserPicture('');
+    }
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -86,6 +106,14 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       }
     }
   }, [pathname]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('echoops_logged_in');
+    localStorage.removeItem('echoops_user_email');
+    localStorage.removeItem('echoops_user_name');
+    localStorage.removeItem('echoops_user_picture');
+    router.push('/login');
+  };
 
   const handleRoleChange = (role: string) => {
     setUserRole(role);
@@ -128,11 +156,11 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         
         {/* Logo and Branding */}
         <div className="p-5 border-b border-zinc-800/50 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 pulse-critical">
-            <Zap className="w-4 h-4 text-white" />
+          <div className="w-9 h-9 rounded-xl bg-zinc-950 flex items-center justify-center p-1 border border-indigo-500/20 shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-300 bg-clip-text text-transparent">EchoOps</span>
+            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">EchoOps</span>
             <span className="text-[10px] block text-zinc-500 font-mono tracking-wider">FEEDBACK OS</span>
           </div>
         </div>
@@ -190,14 +218,27 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
           
           {/* User profile details */}
-          <div className="mt-4 flex items-center gap-2.5 pt-3 border-t border-zinc-800/30">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700/80">
-              <User className="w-4 h-4 text-zinc-400" />
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-zinc-800/30">
+            <div className="flex items-center gap-2.5 overflow-hidden">
+              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700/80 shrink-0 overflow-hidden">
+                {userPicture ? (
+                  <img src={userPicture} alt={userName} className="w-full h-full object-cover" />
+                ) : (
+                  <User className="w-4 h-4 text-zinc-400" />
+                )}
+              </div>
+              <div className="overflow-hidden">
+                <span className="text-xs font-semibold block text-zinc-200 truncate">{userName}</span>
+                <span className="text-[10px] text-zinc-500 truncate block">{userEmail}</span>
+              </div>
             </div>
-            <div className="overflow-hidden">
-              <span className="text-xs font-semibold block text-zinc-200 truncate">Rahul Sharma</span>
-              <span className="text-[10px] text-zinc-500 truncate block">rahul@acme.io</span>
-            </div>
+            <button 
+              onClick={handleLogout}
+              title="Log Out"
+              className="p-1.5 rounded-lg border border-zinc-850 hover:bg-red-500/10 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 

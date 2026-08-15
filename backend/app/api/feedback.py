@@ -6,8 +6,9 @@ from backend.app.database import get_db
 from backend.app.models import Feedback
 from backend.app.schemas import FeedbackResponse, FeedbackCreate, AudioUploadResponse
 from backend.app.pipeline import FeedbackPipeline
+from backend.app.api.auth_dep import get_current_user
 
-router = APIRouter(prefix="/api/feedback", tags=["Feedback"])
+router = APIRouter(prefix="/api/feedback", tags=["Feedback"], dependencies=[Depends(get_current_user)])
 
 @router.get("", response_model=List[FeedbackResponse])
 def get_all_feedback(db: Session = Depends(get_db)):

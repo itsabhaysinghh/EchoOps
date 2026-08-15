@@ -36,6 +36,7 @@ class User(Base):
     role = Column(String)  # Super Admin, Admin, Product Manager, Engineering Manager, Developer, Customer Support, Viewer
     company_id = Column(Integer, ForeignKey("companies.id"))
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True)
+    hashed_password = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     company = relationship("Company", back_populates="users")

@@ -203,3 +203,32 @@ class AudioUploadResponse(BaseModel):
     emotion: str
     suggested_team: str
     suggested_priority: str
+
+# Auth Schemas
+class EmailPasswordLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserRegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    role: Optional[str] = "Developer"
+    company_name: Optional[str] = None
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    code: str
+    new_password: str
+
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+class AuthTokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+

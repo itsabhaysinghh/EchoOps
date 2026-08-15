@@ -3,14 +3,20 @@ from sqlalchemy.orm import Session
 from typing import List
 import datetime
 from backend.app.database import get_db
-from backend.app.models import Issue, IssueComment, Feedback
-from backend.app.schemas import IssueResponse, IssueUpdate, IssueCommentCreate, IssueCommentResponse, AIRecommendation
+from backend.app.models import Issue, IssueComment, Feedback, FeatureRequest
+from backend.app.schemas import IssueResponse, IssueUpdate, IssueCommentCreate, IssueCommentResponse, AIRecommendation, FeatureRequestResponse
+from backend.app.api.auth_dep import get_current_user
 
-router = APIRouter(prefix="/api/issues", tags=["Issues"])
+router = APIRouter(prefix="/api/issues", tags=["Issues"], dependencies=[Depends(get_current_user)])
 
 @router.get("", response_model=List[IssueResponse])
 def get_all_issues(db: Session = Depends(get_db)):
     return db.query(Issue).order_by(Issue.health_score.desc()).all()
+
+@router.get("/features/all", response_model=List[FeatureRequestResponse])
+def get_all_features(db: Session = Depends(get_db)):
+    return db.query(FeatureRequest).order_by(FeatureRequest.requests_count.desc()).all()
+
 
 @router.get("/{issue_id}", response_model=IssueResponse)
 def get_issue(issue_id: int, db: Session = Depends(get_db)):

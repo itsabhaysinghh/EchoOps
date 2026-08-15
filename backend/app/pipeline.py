@@ -152,6 +152,28 @@ class FeedbackPipeline:
             best_match.average_rating = (best_match.average_rating * (best_match.affected_users - 1) + rating) / best_match.affected_users
             best_match.health_score = min(best_match.health_score, health_score) # Keep the lowest (worst) health score
             
+            # Update affected devices and platform distribution
+            dev = meta_info.get("device", "Unknown")
+            plat = meta_info.get("platform", "Web")
+            cntry = meta_info.get("country", "United States")
+            ver = meta_info.get("version", "v1.0.0")
+
+            devices_dict = dict(best_match.affected_devices or {})
+            devices_dict[dev] = devices_dict.get(dev, 0) + 1
+            best_match.affected_devices = devices_dict
+
+            platforms_dict = dict(best_match.platform_distribution or {})
+            platforms_dict[plat] = platforms_dict.get(plat, 0) + 1
+            best_match.platform_distribution = platforms_dict
+
+            countries_dict = dict(best_match.affected_countries or {})
+            countries_dict[cntry] = countries_dict.get(cntry, 0) + 1
+            best_match.affected_countries = countries_dict
+
+            versions_dict = dict(best_match.affected_versions or {})
+            versions_dict[ver] = versions_dict.get(ver, 0) + 1
+            best_match.affected_versions = versions_dict
+
             # Recompute health status
             best_match.health_status = self.get_health_status_label(best_match.health_score)
             if priority_score > 75:

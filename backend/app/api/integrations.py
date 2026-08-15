@@ -3,22 +3,37 @@ from sqlalchemy.orm import Session
 from backend.app.database import get_db
 from backend.app.models import Issue, IntegrationSetting
 from backend.app.schemas import IntegrationConnect, IntegrationResponse
+from backend.app.api.app_stores import scan_app_store, AppStoreScanRequest
+from backend.app.api.instagram import scan_instagram_post, InstagramScanRequest
 from typing import List
 import datetime
 import requests
 from requests.auth import HTTPBasicAuth
+from backend.app.api.auth_dep import get_current_user
 
-router = APIRouter(prefix="/api/integrations", tags=["Integrations"])
+router = APIRouter(prefix="/api/integrations", tags=["Integrations"], dependencies=[Depends(get_current_user)])
+
+# Standard channels & tools list
+STANDARD_TOOLS = [
+    "Google Play Store", 
+    "Apple App Store", 
+    "Instagram", 
+    "Trustpilot", 
+    "Jira", 
+    "GitHub", 
+    "Linear", 
+    "Trello", 
+    "ClickUp", 
+    "Slack"
+]
 
 @router.get("", response_model=List[IntegrationResponse])
 def get_integrations(db: Session = Depends(get_db)):
-    # Standard tools list
-    tools = ["Jira", "GitHub", "Linear", "Trello", "ClickUp", "Azure DevOps", "Slack", "Microsoft Teams"]
     connections = db.query(IntegrationSetting).all()
     connected_map = {c.tool_name: c for c in connections}
     
     result = []
-    for tool in tools:
+    for tool in STANDARD_TOOLS:
         if tool in connected_map:
             result.append(connected_map[tool])
         else:
@@ -50,6 +65,18 @@ def connect_integration(conn: IntegrationConnect, db: Session = Depends(get_db))
         db.add(setting)
     db.commit()
     db.refresh(setting)
+
+    # If this is a feedback channel link, automatically trigger review scanning & issue creation
+    url = conn.config_data.get("url") or conn.config_data.get("link")
+    if url:
+        try:
+            if "instagram.com" in url or "instagr.am" in url or conn.tool_name == "Instagram":
+                scan_instagram_post(InstagramScanRequest(post_url=url, max_comments=10), db=db)
+            elif "play.google.com" in url or "apps.apple.com" in url or conn.tool_name in ["Google Play Store", "Apple App Store"]:
+                scan_app_store(AppStoreScanRequest(app_url=url, max_reviews=10), db=db)
+        except Exception as e:
+            print(f"Auto-scan warning during integration connect for {conn.tool_name}:", e)
+
     return setting
 
 @router.post("/disconnect")
@@ -59,7 +86,37 @@ def disconnect_integration(tool_name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Integration not found")
     setting.is_connected = False
     db.commit()
-    return {"status": "success", "message": f"Disconnected {tool_name}."}
+    return {"status": "success", "message": f"Disconnected {tool_name} successfully."}
+
+@router.post("/rescan")
+def rescan_integrations(db: Session = Depends(get_db)):
+    """
+    Re-scans all active connected links (Google Play Store, App Store, Instagram)
+    to ingest new customer reviews and update issue clusters.
+    """
+    active_integrations = db.query(IntegrationSetting).filter(IntegrationSetting.is_connected == True).all()
+    scanned_count = 0
+    
+    for item in active_integrations:
+        url = item.config_data.get("url") or item.config_data.get("link")
+        if not url:
+            continue
+        try:
+            if "instagram.com" in url or item.tool_name == "Instagram":
+                scan_instagram_post(InstagramScanRequest(post_url=url, max_comments=10), db=db)
+                scanned_count += 1
+            elif "play.google.com" in url or "apps.apple.com" in url or item.tool_name in ["Google Play Store", "Apple App Store"]:
+                scan_app_store(AppStoreScanRequest(app_url=url, max_reviews=10), db=db)
+                scanned_count += 1
+        except Exception as e:
+            print(f"Rescan error for {item.tool_name}:", e)
+
+    return {
+        "status": "success",
+        "message": f"Successfully re-scanned {scanned_count} connected links and updated issue clusters.",
+        "scanned_count": scanned_count
+    }
+
 
 # Mock/Real creation endpoints for engineering tools
 @router.post("/jira/{issue_id}")
