@@ -10,6 +10,10 @@ class CompanyCreate(BaseModel):
     website: str
     timezone: str
 
+class TimezoneUpdateRequest(BaseModel):
+    timezone: str = Field(..., max_length=100)
+
+
 class CompanyResponse(BaseModel):
     id: int
     name: str

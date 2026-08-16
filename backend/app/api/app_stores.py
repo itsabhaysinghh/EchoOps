@@ -9,6 +9,12 @@ from backend.app.database import get_db
 from backend.app.pipeline import FeedbackPipeline
 from backend.app.api.auth_dep import get_current_user
 
+try:
+    from google_play_scraper import reviews as fetch_gplay_reviews, Sort as GPlaySort, app as fetch_gplay_app
+    GPLAY_SCRAPER_AVAILABLE = True
+except ImportError:
+    GPLAY_SCRAPER_AVAILABLE = False
+
 router = APIRouter(prefix="/api/app-stores", tags=["App Store & Play Store Scanner"], dependencies=[Depends(get_current_user)])
 
 class AppStoreScanRequest(BaseModel):
@@ -62,6 +68,13 @@ def extract_app_name(url: str, is_apple: bool) -> str:
         match = re.search(r'id=([^&]+)', url_lower)
         if match:
             pkg = match.group(1)
+            if GPLAY_SCRAPER_AVAILABLE:
+                try:
+                    info = fetch_gplay_app(pkg)
+                    if info and info.get("title"):
+                        return info["title"]
+                except Exception:
+                    pass
             parts = pkg.split('.')
             return parts[-1].capitalize() + " Android App"
         return "Google Play Store Application"
@@ -84,42 +97,70 @@ def scan_app_store(req: AppStoreScanRequest, db: Session = Depends(get_db)):
     
     pipeline = FeedbackPipeline(db)
     
-    # Representative app review pool simulating real store ratings and customer complaints
-    if is_apple:
-        review_pool = [
-            {"name": "Sarah_M_99", "rating": 1, "text": "Checkout payment fails with Error 500 when choosing Apple Pay on iPhone 15 Pro Max running iOS 17.4! Money deducted but order failed.", "device": "iPhone 15 Pro", "version": "v2.4.0"},
-            {"name": "DevGuy_NYC", "rating": 1, "text": "Google OAuth token expired prematurely. I get stuck in a login loop every time I open the app on my iPad Pro.", "device": "iPad Pro 12.9", "version": "v2.4.0"},
-            {"name": "Alex_R", "rating": 2, "text": "Password reset verification email takes over 30 minutes to arrive. Can't access my subscription.", "device": "iPhone 14 Pro", "version": "v2.3.9"},
-            {"name": "Tech_Enthusiast", "rating": 1, "text": "App freezes on payment processing screen. Forced to force-close and restart on iPhone 15.", "device": "iPhone 15", "version": "v2.4.0"},
-            {"name": "Jessica_B", "rating": 2, "text": "Dark mode font contrast is unreadable in settings menu.", "device": "iPhone 13", "version": "v2.3.8"},
-            {"name": "Mark_P", "rating": 5, "text": "Love the crisp UI redesign and fast speed on iOS!", "device": "iPhone 15 Pro", "version": "v2.4.0"}
-        ]
-    else:
-        review_pool = [
-            {"name": "Rohan_S", "rating": 1, "text": "App is extremely sluggish on Android 14 (Samsung S24 Ultra). Takes 15 seconds to load after login screen!", "device": "Samsung Galaxy S24 Ultra", "version": "v2.4.0"},
-            {"name": "Carlos_D", "rating": 1, "text": "Payment gateway drops connection on Samsung S23. Keeps throwing 500 Internal Server error at checkout.", "device": "Samsung Galaxy S23", "version": "v2.4.0"},
-            {"name": "Priya_K", "rating": 1, "text": "Google login fails on Pixel 8 Pro. Says token invalid and loops back to splash screen.", "device": "Google Pixel 8 Pro", "version": "v2.4.0"},
-            {"name": "Lucas_W", "rating": 2, "text": "Initial database sync takes forever on startup blocking main thread on OnePlus 12.", "device": "OnePlus 12", "version": "v2.3.9"},
-            {"name": "Bruno_G", "rating": 2, "text": "Notifications arrive 2 hours late on Xiaomi 13.", "device": "Xiaomi 13", "version": "v2.3.8"},
-            {"name": "Anita_V", "rating": 5, "text": "Great app overall! Smooth navigation on Pixel 8.", "device": "Google Pixel 8", "version": "v2.4.0"}
-        ]
-        
-    # If user provided custom sample_reviews text
-    if req.sample_reviews and len(req.sample_reviews.strip()) > 5:
-        custom_lines = [line.strip() for line in req.sample_reviews.split("\n") if line.strip()]
-        user_reviews = [
-            {
-                "name": f"StoreUser_{i+1}",
-                "rating": 1 if any(w in line.lower() for w in ["crash", "error", "fail", "slow", "bug"]) else 4,
-                "text": line,
-                "device": "iPhone 15 Pro" if is_apple else "Samsung Galaxy S24",
-                "version": "v2.4.0"
-            }
-            for i, line in enumerate(custom_lines)
-        ]
-    else:
-        count = min(len(review_pool), max(3, req.max_reviews or 6))
-        user_reviews = review_pool[:count]
+    user_reviews = []
+    
+    # 1. Try live Google Play Store scraping if link is for Google Play Store and no custom sample_reviews supplied
+    if is_google and GPLAY_SCRAPER_AVAILABLE and not (req.sample_reviews and len(req.sample_reviews.strip()) > 5):
+        pkg_match = re.search(r'id=([^&]+)', url)
+        if pkg_match:
+            pkg = pkg_match.group(1).strip()
+            try:
+                count_to_fetch = max(3, min(req.max_reviews or 10, 50))
+                g_reviews, _ = fetch_gplay_reviews(
+                    pkg,
+                    lang='en',
+                    country='us',
+                    sort=GPlaySort.NEWEST,
+                    count=count_to_fetch
+                )
+                if g_reviews:
+                    for r in g_reviews:
+                        user_reviews.append({
+                            "name": r.get("userName") or "Google Play User",
+                            "rating": r.get("score") or 3,
+                            "text": r.get("content") or "",
+                            "device": "Android Mobile",
+                            "version": r.get("reviewCreatedVersion") or r.get("appVersion") or "v2.4.0"
+                        })
+            except Exception as e:
+                print(f"Live Google Play Store scraper warning for package '{pkg}': {e}")
+                
+    # 2. If user provided custom sample_reviews text
+    if not user_reviews:
+        if req.sample_reviews and len(req.sample_reviews.strip()) > 5:
+            custom_lines = [line.strip() for line in req.sample_reviews.split("\n") if line.strip()]
+            user_reviews = [
+                {
+                    "name": f"StoreUser_{i+1}",
+                    "rating": 1 if any(w in line.lower() for w in ["crash", "error", "fail", "slow", "bug"]) else 4,
+                    "text": line,
+                    "device": "iPhone 15 Pro" if is_apple else "Samsung Galaxy S24",
+                    "version": "v2.4.0"
+                }
+                for i, line in enumerate(custom_lines)
+            ]
+        else:
+            # Fallback mock pool if live scrape fails or for Apple links
+            if is_apple:
+                review_pool = [
+                    {"name": "Sarah_M_99", "rating": 1, "text": "Checkout payment fails with Error 500 when choosing Apple Pay on iPhone 15 Pro Max running iOS 17.4! Money deducted but order failed.", "device": "iPhone 15 Pro", "version": "v2.4.0"},
+                    {"name": "DevGuy_NYC", "rating": 1, "text": "Google OAuth token expired prematurely. I get stuck in a login loop every time I open the app on my iPad Pro.", "device": "iPad Pro 12.9", "version": "v2.4.0"},
+                    {"name": "Alex_R", "rating": 2, "text": "Password reset verification email takes over 30 minutes to arrive. Can't access my subscription.", "device": "iPhone 14 Pro", "version": "v2.3.9"},
+                    {"name": "Tech_Enthusiast", "rating": 1, "text": "App freezes on payment processing screen. Forced to force-close and restart on iPhone 15.", "device": "iPhone 15", "version": "v2.4.0"},
+                    {"name": "Jessica_B", "rating": 2, "text": "Dark mode font contrast is unreadable in settings menu.", "device": "iPhone 13", "version": "v2.3.8"},
+                    {"name": "Mark_P", "rating": 5, "text": "Love the crisp UI redesign and fast speed on iOS!", "device": "iPhone 15 Pro", "version": "v2.4.0"}
+                ]
+            else:
+                review_pool = [
+                    {"name": "Rohan_S", "rating": 1, "text": "App is extremely sluggish on Android 14 (Samsung S24 Ultra). Takes 15 seconds to load after login screen!", "device": "Samsung Galaxy S24 Ultra", "version": "v2.4.0"},
+                    {"name": "Carlos_D", "rating": 1, "text": "Payment gateway drops connection on Samsung S23. Keeps throwing 500 Internal Server error at checkout.", "device": "Samsung Galaxy S23", "version": "v2.4.0"},
+                    {"name": "Priya_K", "rating": 1, "text": "Google login fails on Pixel 8 Pro. Says token invalid and loops back to splash screen.", "device": "Google Pixel 8 Pro", "version": "v2.4.0"},
+                    {"name": "Lucas_W", "rating": 2, "text": "Initial database sync takes forever on startup blocking main thread on OnePlus 12.", "device": "OnePlus 12", "version": "v2.3.9"},
+                    {"name": "Bruno_G", "rating": 2, "text": "Notifications arrive 2 hours late on Xiaomi 13.", "device": "Xiaomi 13", "version": "v2.3.8"},
+                    {"name": "Anita_V", "rating": 5, "text": "Great app overall! Smooth navigation on Pixel 8.", "device": "Google Pixel 8", "version": "v2.4.0"}
+                ]
+            count = min(len(review_pool), max(3, req.max_reviews or 6))
+            user_reviews = review_pool[:count]
         
     analyzed_reviews = []
     issues_detected_count = 0

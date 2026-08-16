@@ -8,4 +8,6 @@ email-validator>=2.1.0
 python-multipart>=0.0.9
 cryptography>=42.0.0
 pyjwt>=2.8.0
+google-play-scraper>=1.2.7
+
 
