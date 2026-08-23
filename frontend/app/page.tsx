@@ -17,8 +17,21 @@ import {
   Clock,
   Zap,
   Activity,
-  Flame
+  Flame,
+  Bot,
+  Layers,
+  Compass,
+  ChevronRight
 } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 
 interface ProblemItem {
   id: number;
@@ -30,8 +43,6 @@ interface ProblemItem {
   health_status: string;
   assigned_team: string;
   total_reports: number;
-  average_rating: number;
-  estimated_revenue_risk: number;
   trend: string;
   created_at: string;
 }
@@ -51,86 +62,85 @@ function DashboardContent() {
     criticalProblems: 8,
     healthIndex: 82,
     csat: 84,
-    avgRating: 4.4,
     resolvedCount: 42
   });
-
-  // Ingestion form state
-  const [showIngestForm, setShowIngestForm] = useState(false);
-  const [ingestMode, setIngestMode] = useState<'manual' | 'instagram' | 'appstore'>('manual');
-  const [ingestText, setIngestText] = useState('');
-  const [ingestSource, setIngestSource] = useState('Google Play Store');
-  const [ingestRating, setIngestRating] = useState(1);
-  const [ingesting, setIngesting] = useState(false);
-  const [ingestSuccess, setIngestSuccess] = useState(false);
-
-  // Scanners state
-  const [instaUrl, setInstaUrl] = useState('https://www.instagram.com/p/C8x9Ab2M3vP/');
-  const [instaScanning, setInstaScanning] = useState(false);
-  const [appStoreUrl, setAppStoreUrl] = useState('https://apps.apple.com/us/app/echoops-mobile/id987654321');
-  const [appStoreScanning, setAppStoreScanning] = useState(false);
 
   const mockDefaultProblems: ProblemItem[] = [
     {
       id: 1,
       title: 'Payment crashes after UPI',
-      summary: 'Application crashes immediately after completing payment via UPI gateway',
+      summary: 'Customers report that the app crashes immediately after completing a UPI payment.',
       status: 'In Progress',
       priority: 'Critical',
       health_score: 98,
-      health_status: 'Business Critical',
-      assigned_team: 'Payments',
+      health_status: 'BUSINESS CRITICAL',
+      assigned_team: 'Payments Engineering',
       total_reports: 2431,
-      average_rating: 1.2,
-      estimated_revenue_risk: 42000,
       trend: '↑ 42%',
-      created_at: '18 July'
+      created_at: '2m ago'
     },
     {
       id: 2,
       title: 'Refund taking too long',
-      summary: 'Customers report delayed refund processing status taking 7+ business days',
+      summary: 'Delayed refund processing status taking 7+ business days to reflect in bank.',
       status: 'Open',
       priority: 'High',
       health_score: 87,
-      health_status: 'Critical',
-      assigned_team: 'Support',
+      health_status: 'CRITICAL',
+      assigned_team: 'Support Operations',
       total_reports: 1102,
-      average_rating: 1.8,
-      estimated_revenue_risk: 18500,
       trend: '↑ 18%',
-      created_at: '19 July'
+      created_at: '12m ago'
     },
     {
       id: 3,
       title: 'Delivery tracking inaccurate',
-      summary: 'Live map location coordinates fail to refresh during delivery transit',
+      summary: 'Live map location coordinates fail to refresh during courier transit.',
       status: 'Resolved',
       priority: 'Medium',
       health_score: 64,
-      health_status: 'Needs Attention',
-      assigned_team: 'Logistics',
+      health_status: 'NEEDS ATTENTION',
+      assigned_team: 'Logistics Team',
       total_reports: 897,
-      average_rating: 3.2,
-      estimated_revenue_risk: 8400,
       trend: '↓ 5%',
-      created_at: '20 July'
+      created_at: '24m ago'
     },
     {
       id: 4,
       title: 'OTP verification code not received',
-      summary: 'SMS Gateway timeouts lock users out of Google OAuth & SMS login',
+      summary: 'SMS Gateway timeouts lock users out of Google OAuth & SMS login.',
       status: 'Open',
       priority: 'High',
       health_score: 82,
-      health_status: 'Critical',
-      assigned_team: 'Authentication',
+      health_status: 'CRITICAL',
+      assigned_team: 'Authentication Team',
       total_reports: 563,
-      average_rating: 2.1,
-      estimated_revenue_risk: 12100,
       trend: '↑ 22%',
-      created_at: '21 July'
+      created_at: '1h ago'
     }
+  ];
+
+  const signalChartData = [
+    { day: '1 Aug', Positive: 240, Neutral: 120, Negative: 40, Critical: 10 },
+    { day: '5 Aug', Positive: 310, Neutral: 140, Negative: 45, Critical: 12 },
+    { day: '10 Aug', Positive: 280, Neutral: 160, Negative: 70, Critical: 28 },
+    { day: '15 Aug', Positive: 420, Neutral: 180, Negative: 110, Critical: 45 },
+    { day: '20 Aug', Positive: 510, Neutral: 190, Negative: 90, Critical: 32 },
+    { day: '23 Aug', Positive: 680, Neutral: 210, Negative: 85, Critical: 18 }
+  ];
+
+  const recentActivity = [
+    { text: 'AI detected new critical issue', sub: 'Payment Crash', time: '2 minutes ago', badge: 'bg-red-500/10 text-red-400' },
+    { text: 'Jira ticket created', sub: 'PAY-4821', time: '5 minutes ago', badge: 'bg-indigo-500/10 text-indigo-400' },
+    { text: 'Refund Delay assigned', sub: 'Support Team', time: '12 minutes ago', badge: 'bg-zinc-800 text-zinc-300' },
+    { text: 'Issue verified as resolved', sub: 'Coupon Bug', time: '24 minutes ago', badge: 'bg-emerald-500/10 text-emerald-400' }
+  ];
+
+  const aiInsights = [
+    { text: 'Payment complaints increased 42% after version 12.5 rollout.', time: 'Just now', icon: AlertTriangle, color: 'text-red-400' },
+    { text: 'Refund complaints are stabilizing following Support manual workflow.', time: '10m ago', icon: CheckCircle, color: 'text-emerald-400' },
+    { text: 'Android 15 is generating 31% more crash reports than Android 14.', time: '25m ago', icon: Zap, color: 'text-amber-400' },
+    { text: 'Dark Mode is the fastest-growing feature request (1,284 upvotes).', time: '1h ago', icon: Sparkles, color: 'text-indigo-400' }
   ];
 
   const fetchData = async () => {
@@ -147,13 +157,11 @@ function DashboardContent() {
             status: d.status || 'Open',
             priority: d.priority || 'High',
             health_score: d.health_score || 85,
-            health_status: getHealthLabel(d.health_score || 85),
+            health_status: d.health_score >= 95 ? 'BUSINESS CRITICAL' : d.health_score >= 80 ? 'CRITICAL' : d.health_score >= 60 ? 'NEEDS ATTENTION' : 'STABLE',
             assigned_team: d.assigned_team || 'Engineering',
             total_reports: d.total_reports || 100,
-            average_rating: d.average_rating || 2.0,
-            estimated_revenue_risk: d.estimated_revenue_risk || 5000,
-            trend: d.health_score > 80 ? '↑ 34%' : '↓ 8%',
-            created_at: 'Today'
+            trend: d.health_score > 80 ? '↑ 42%' : '↓ 5%',
+            created_at: 'Just now'
           }));
           setProblems(mapped);
         } else {
@@ -179,373 +187,289 @@ function DashboardContent() {
       return;
     }
     const q = searchQuery.toLowerCase();
-    const filtered = problems.filter(p => 
-      p.title.toLowerCase().includes(q) || 
-      p.summary.toLowerCase().includes(q) || 
-      p.assigned_team.toLowerCase().includes(q) || 
-      p.priority.toLowerCase().includes(q)
-    );
-    setFilteredProblems(filtered);
+    setFilteredProblems(problems.filter(p => p.title.toLowerCase().includes(q) || p.summary.toLowerCase().includes(q)));
   }, [searchQuery, problems]);
 
-  const getHealthLabel = (score: number) => {
-    if (score >= 95) return 'Business Critical';
-    if (score >= 80) return 'Critical';
-    if (score >= 60) return 'Needs Attention';
-    if (score >= 40) return 'Growing';
-    return 'Stable';
-  };
-
-  const getHealthBadgeStyle = (score: number) => {
-    if (score >= 95) return { bg: 'bg-purple-500/10 border-purple-500/30 text-purple-400', label: 'Business Critical', dot: 'bg-purple-500 shadow-purple-500/50' };
-    if (score >= 80) return { bg: 'bg-red-500/10 border-red-500/30 text-red-400 pulse-critical', label: 'Critical', dot: 'bg-red-500 shadow-red-500/50' };
-    if (score >= 60) return { bg: 'bg-orange-500/10 border-orange-500/30 text-orange-400', label: 'Needs Attention', dot: 'bg-orange-500' };
-    if (score >= 40) return { bg: 'bg-yellow-500/10 border-yellow-500/30 text-yellow-400', label: 'Growing', dot: 'bg-yellow-500' };
-    return { bg: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400', label: 'Stable', dot: 'bg-emerald-500' };
-  };
-
-  const handleIngestSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!ingestText.trim()) return;
-    setIngesting(true);
-    setIngestSuccess(false);
-
-    try {
-      const res = await fetch('http://localhost:8000/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          source: ingestSource,
-          original_text: ingestText,
-          meta_info: { rating: Number(ingestRating), platform: 'Mobile' }
-        })
-      });
-      if (res.ok) {
-        setIngestSuccess(true);
-        setIngestText('');
-        fetchData();
-        setTimeout(() => setIngestSuccess(false), 3000);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIngesting(false);
-    }
+  const getProblemScoreStyle = (score: number) => {
+    if (score >= 95) return { color: 'text-purple-400', bg: 'bg-purple-500/10 border-purple-500/30', label: 'BUSINESS CRITICAL', dot: 'bg-purple-500 shadow-purple-500/50' };
+    if (score >= 80) return { color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/30 pulse-critical', label: 'CRITICAL', dot: 'bg-red-500 shadow-red-500/50' };
+    if (score >= 60) return { color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/30', label: 'NEEDS ATTENTION', dot: 'bg-orange-500' };
+    if (score >= 40) return { color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/30', label: 'GROWING', dot: 'bg-yellow-500' };
+    return { color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/30', label: 'STABLE', dot: 'bg-emerald-500' };
   };
 
   return (
     <SidebarLayout>
       <div className="space-y-6 max-w-7xl mx-auto">
         
-        {/* Main Dashboard Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-850 pb-5">
+        {/* Dashboard Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-5">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white font-heading">
-              Good morning, Alex
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white font-heading">
+              Customer Intelligence
             </h1>
             <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-              Here's what your customers are telling you across 152,948 reviews, emails, and voice calls.
+              Here's what changed in your customer voice.
             </p>
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-500 mt-2">
+              <span className="text-zinc-300 font-semibold">{stats.processed} signals analyzed</span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Last synchronized 4 minutes ago
+              </span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-[11px] font-mono text-zinc-500 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0D0D12] border border-zinc-800">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              Last synced 4 min ago
-            </div>
+          <div className="flex items-center gap-2.5 shrink-0">
             <button 
-              onClick={() => setShowIngestForm(!showIngestForm)}
-              className="px-3.5 py-1.5 rounded-xl bg-ai-gradient text-white text-xs font-semibold shadow-md flex items-center gap-1.5 hover:opacity-90 transition"
+              onClick={() => window.dispatchEvent(new CustomEvent('open-ai-drawer'))}
+              className="px-4 py-2 rounded-xl bg-ai-gradient text-white text-xs font-bold shadow-lg flex items-center gap-2 hover:opacity-95 transition"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Ingest Feedback</span>
+              <span>Ask EchoOps</span>
             </button>
             <button 
               onClick={fetchData} 
-              className="p-2 rounded-xl bg-[#0D0D12] border border-zinc-800 text-zinc-400 hover:text-white transition"
-              title="Refresh Data"
+              className="p-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-zinc-400 hover:text-white transition"
+              title="Refresh Intelligence"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Ingestion Console Form */}
-        {showIngestForm && (
-          <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] glow-ai-card space-y-4">
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
-              <h3 className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                <Sparkles className="w-4 h-4" /> AI Feedback Pipeline Ingestor
-              </h3>
-              <div className="flex bg-[#050505] p-1 rounded-xl border border-zinc-800 text-xs gap-1">
-                <button
-                  type="button"
-                  onClick={() => setIngestMode('manual')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition ${ingestMode === 'manual' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-                >
-                  Manual Text
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIngestMode('appstore')}
-                  className={`px-3 py-1 rounded-lg font-semibold transition ${ingestMode === 'appstore' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-                >
-                  App Store Review
-                </button>
+        {/* HERO CENTERPIECE COMPONENT: AI HEALTH SECTION */}
+        <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/[0.08] bg-[#08080A] glow-ai-card space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            
+            {/* Center Gauge Radial Signal */}
+            <div className="flex items-center gap-6">
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex items-center justify-center shrink-0">
+                {/* Outer Radial Ring */}
+                <div className="absolute inset-0 rounded-full border-4 border-white/[0.06] border-t-indigo-500 border-r-purple-500 border-b-pink-500 ambient-signal-pulse" />
+                <div className="text-center">
+                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tighter font-heading block">
+                    82
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-400 block mt-0.5">
+                    HEALTHY
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-400">CUSTOMER HEALTH</span>
+                  <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/25">
+                    ↑ 6.4% this week
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-white font-heading">
+                  AI Customer Health Signal
+                </h3>
+                <p className="text-xs text-zinc-400 max-w-md leading-relaxed">
+                  Customer sentiment is improving across mobile app reviews, but payment-related complaints require immediate engineering hotfix.
+                </p>
               </div>
             </div>
 
-            <form onSubmit={handleIngestSubmit} className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="md:col-span-2">
-                  <textarea
-                    required
-                    value={ingestText}
-                    onChange={(e) => setIngestText(e.target.value)}
-                    placeholder="Enter customer feedback text (e.g. 'UPI payment failed after order confirmation...')"
-                    className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 h-20 resize-none"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <select
-                    value={ingestSource}
-                    onChange={(e) => setIngestSource(e.target.value)}
-                    className="w-full bg-[#050505] border border-zinc-800 text-xs text-zinc-300 rounded-xl p-2.5"
-                  >
-                    <option value="Google Play Store">Google Play Store</option>
-                    <option value="Apple App Store">Apple App Store</option>
-                    <option value="Zendesk">Zendesk Ticket</option>
-                    <option value="Support Email">Support Email</option>
-                  </select>
-                  <button
-                    type="submit"
-                    disabled={ingesting}
-                    className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md"
-                  >
-                    {ingesting ? 'Analyzing...' : 'Ingest to AI Pipeline'}
-                  </button>
-                </div>
+            {/* Sentiment Signal Breakdown */}
+            <div className="bg-white/[0.02] border border-white/[0.06] p-4 rounded-2xl space-y-3 min-w-[240px]">
+              <span className="text-[10px] font-mono uppercase font-semibold text-zinc-400 tracking-wider block">Customer Signal Sentiment</span>
+              
+              {/* Sentiment Progress Bar */}
+              <div className="h-2 w-full rounded-full bg-zinc-900 overflow-hidden flex">
+                <div className="h-full bg-emerald-500" style={{ width: '71%' }} />
+                <div className="h-full bg-indigo-500" style={{ width: '17%' }} />
+                <div className="h-full bg-red-500" style={{ width: '12%' }} />
               </div>
-              {ingestSuccess && (
-                <p className="text-xs text-emerald-400 font-medium">✓ Feedback processed and clustered into dashboard in real-time!</p>
-              )}
-            </form>
-          </div>
-        )}
 
-        {/* Top 7 Metric Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500" /> <span className="text-zinc-300 font-bold">71%</span> <span className="text-zinc-500">Positive</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-indigo-500" /> <span className="text-zinc-300 font-bold">17%</span> <span className="text-zinc-500">Neutral</span></div>
+                <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-red-500" /> <span className="text-zinc-300 font-bold">12%</span> <span className="text-zinc-500">Negative</span></div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* AI Health Observation Insight */}
+          <div className="p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/20 text-xs flex items-center gap-3">
+            <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span className="text-zinc-300">
+              <strong className="text-white font-semibold">✦ AI Insight:</strong> Customer satisfaction improved 6.4% this week, but payment-related complaints are increasing rapidly in release v12.5.
+            </span>
+          </div>
+        </div>
+
+        {/* Customer Signal Graph */}
+        <div className="glass-panel p-6 rounded-2xl border border-white/[0.06] bg-[#08080A] space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-sm font-bold text-white font-heading">Customer Signal Activity</h3>
+              <p className="text-xs text-zinc-400 mt-0.5">Customer feedback signals analyzed over the last 30 days.</p>
+            </div>
+            <div className="flex gap-4 text-xs font-mono text-zinc-400">
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Positive</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500" /> Neutral</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Critical</span>
+            </div>
+          </div>
+
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={signalChartData}>
+                <defs>
+                  <linearGradient id="colorPos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorCrit" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                <XAxis dataKey="day" stroke="#71717a" fontSize={11} />
+                <YAxis stroke="#71717a" fontSize={11} />
+                <Tooltip contentStyle={{ backgroundColor: '#0C0C10', borderColor: 'rgba(255,255,255,0.08)' }} />
+                <Area type="monotone" dataKey="Positive" stroke="#10B981" fillOpacity={1} fill="url(#colorPos)" />
+                <Area type="monotone" dataKey="Critical" stroke="#EF4444" fillOpacity={1} fill="url(#colorCrit)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Compact Essential Metrics Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs font-mono">
+          <div className="p-3.5 rounded-xl bg-[#08080A] border border-white/[0.06]">
+            <span className="text-zinc-500 text-[10px] uppercase block font-semibold">Signals</span>
+            <span className="text-lg font-bold text-white mt-0.5 block">152K</span>
+          </div>
+          <div className="p-3.5 rounded-xl bg-[#08080A] border border-white/[0.06]">
+            <span className="text-zinc-500 text-[10px] uppercase block font-semibold">Problems</span>
+            <span className="text-lg font-bold text-white mt-0.5 block">248</span>
+          </div>
+          <div className="p-3.5 rounded-xl bg-red-500/5 border border-red-500/20">
+            <span className="text-red-400 text-[10px] uppercase block font-bold">Critical</span>
+            <span className="text-lg font-extrabold text-red-500 mt-0.5 block">8</span>
+          </div>
+          <div className="p-3.5 rounded-xl bg-[#08080A] border border-white/[0.06]">
+            <span className="text-zinc-500 text-[10px] uppercase block font-semibold">Resolved</span>
+            <span className="text-lg font-bold text-emerald-400 mt-0.5 block">42</span>
+          </div>
+          <div className="p-3.5 rounded-xl bg-[#08080A] border border-white/[0.06] col-span-2 sm:col-span-1">
+            <span className="text-zinc-500 text-[10px] uppercase block font-semibold">Satisfaction</span>
+            <span className="text-lg font-bold text-emerald-400 mt-0.5 block">84%</span>
+          </div>
+        </div>
+
+        {/* 2 Column Section: Intelligent Problem Feed (Left) & Side Intelligence Panel (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Card 1: Reviews Processed */}
-          <div className="glass-panel p-5 rounded-2xl card-hover border border-zinc-800/80 bg-[#0D0D12]">
-            <div className="flex justify-between items-start text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              <span>Reviews Processed</span>
-              <span className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400"><Inbox className="w-4 h-4" /></span>
-            </div>
-            <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.processed}</span>
-              <span className="text-xs font-semibold text-emerald-400 flex items-center gap-0.5">
-                <TrendingUp className="w-3.5 h-3.5" /> +12.4%
-              </span>
-            </div>
-            <span className="text-[10px] text-zinc-500 mt-1 block">vs last week</span>
-          </div>
-
-          {/* Card 2: Total Problems */}
-          <div className="glass-panel p-5 rounded-2xl card-hover border border-zinc-800/80 bg-[#0D0D12]">
-            <div className="flex justify-between items-start text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              <span>Total Problems</span>
-              <span className="p-1.5 rounded-lg bg-zinc-800 text-zinc-300"><Activity className="w-4 h-4" /></span>
-            </div>
-            <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{stats.totalProblems}</span>
-              <span className="text-xs font-semibold text-amber-400">18 new</span>
-            </div>
-            <span className="text-[10px] text-zinc-500 mt-1 block">active clusters</span>
-          </div>
-
-          {/* Card 3: Critical Problems */}
-          <div className="glass-panel p-5 rounded-2xl card-hover border border-red-500/20 bg-[#0D0D12]">
-            <div className="flex justify-between items-start text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              <span>Critical Problems</span>
-              <span className="p-1.5 rounded-lg bg-red-500/10 text-red-400"><AlertTriangle className="w-4 h-4" /></span>
-            </div>
-            <div className="mt-4 flex items-baseline justify-between">
-              <span className="text-2xl sm:text-3xl font-extrabold text-red-500 tracking-tight">{stats.criticalProblems}</span>
-              <span className="text-xs font-semibold text-red-400 flex items-center gap-0.5">
-                ↑ 3 this week
-              </span>
-            </div>
-            <span className="text-[10px] text-zinc-500 mt-1 block">requires urgent hotfix</span>
-          </div>
-
-          {/* Card 4: AI Health Gauge Card */}
-          <div className="glass-panel p-5 rounded-2xl card-hover border border-indigo-500/30 bg-[#0D0D12] glow-ai-card flex flex-col justify-between">
-            <div className="flex justify-between items-start text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-              <span className="text-indigo-300 flex items-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> AI Health Index
-              </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-                Healthy
-              </span>
-            </div>
-            <div className="mt-3 flex items-center justify-between">
+          {/* Left: Intelligent Problem Feed */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex justify-between items-center">
               <div>
-                <span className="text-3xl sm:text-4xl font-black text-white font-heading">{stats.healthIndex}</span>
-                <span className="text-xs text-zinc-500 font-mono"> / 100</span>
-              </div>
-              {/* Semi-circular gauge visual */}
-              <div className="w-14 h-14 rounded-full border-4 border-zinc-800 border-t-indigo-500 border-r-purple-500 border-b-pink-500 flex items-center justify-center font-bold text-xs text-indigo-400">
-                82%
+                <h2 className="text-lg font-bold text-white font-heading">Problems requiring attention</h2>
+                <p className="text-xs text-zinc-400 mt-0.5">AI-ranked by customer impact and urgency.</p>
               </div>
             </div>
-            <span className="text-[10px] text-emerald-400 font-semibold mt-2 block">↑ 6.4% this week</span>
-          </div>
 
-        </div>
-
-        {/* Secondary KPI Metrics Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          
-          {/* CSAT */}
-          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider block font-semibold">Customer Satisfaction</span>
-              <span className="text-xl font-bold text-white mt-0.5 block">{stats.csat}%</span>
-            </div>
-            <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">+4.2%</span>
-          </div>
-
-          {/* Average Rating */}
-          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider block font-semibold">Average Rating</span>
-              <span className="text-xl font-bold text-white mt-0.5 flex items-center gap-1.5">
-                {stats.avgRating} <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">+0.2★</span>
-          </div>
-
-          {/* Resolved This Week */}
-          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12] flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider block font-semibold">Resolved This Week</span>
-              <span className="text-xl font-bold text-emerald-400 mt-0.5 flex items-center gap-1.5">
-                {stats.resolvedCount} <CheckCircle className="w-4 h-4" />
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">+18%</span>
-          </div>
-
-        </div>
-
-        {/* Top Customer Problems Section */}
-        <div className="glass-panel rounded-2xl border border-zinc-800/80 bg-[#0D0D12] overflow-hidden">
-          
-          <div className="px-6 py-4 border-b border-zinc-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-lg font-extrabold text-white font-heading">Top Customer Problems</h2>
-              <p className="text-xs text-zinc-400 mt-0.5">Problems requiring the most attention right now, clustered by AI.</p>
-            </div>
-            {searchQuery && (
-              <span className="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full font-mono">
-                Filtered: "{searchQuery}"
-              </span>
-            )}
-          </div>
-
-          {loading ? (
-            <div className="p-12 text-center text-zinc-500">
-              <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <span className="text-xs">Analyzing customer problems...</span>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-zinc-800/80 bg-[#080808] text-zinc-400 uppercase text-[10px] font-mono tracking-wider">
-                    <th className="py-3.5 px-6">Problem</th>
-                    <th className="py-3.5 px-6 text-center">Health Score</th>
-                    <th className="py-3.5 px-6 text-center">Reports</th>
-                    <th className="py-3.5 px-6 text-center">Trend</th>
-                    <th className="py-3.5 px-6">Priority</th>
-                    <th className="py-3.5 px-6">Team</th>
-                    <th className="py-3.5 px-6">Status</th>
-                    <th className="py-3.5 px-6 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-850">
-                  {filteredProblems.map((prob) => {
-                    const badge = getHealthBadgeStyle(prob.health_score);
-                    return (
-                      <tr
-                        key={prob.id}
-                        onClick={() => router.push(`/issues/${prob.id}`)}
-                        className="hover:bg-zinc-900/50 cursor-pointer transition duration-150 group card-hover"
-                      >
-                        <td className="py-4 px-6">
-                          <div className="font-bold text-sm text-zinc-100 group-hover:text-indigo-400 transition font-heading">
+            <div className="space-y-3">
+              {filteredProblems.map((prob) => {
+                const badge = getProblemScoreStyle(prob.health_score);
+                return (
+                  <div
+                    key={prob.id}
+                    onClick={() => router.push(`/issues/${prob.id}`)}
+                    className="p-5 rounded-2xl bg-[#08080A] border border-white/[0.06] hover:border-white/[0.14] card-hover cursor-pointer transition space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
+                          <h3 className="text-base font-bold text-white font-heading group-hover:text-indigo-400 transition">
                             {prob.title}
-                          </div>
-                          <div className="text-xs text-zinc-400 mt-0.5 line-clamp-1 max-w-sm">
-                            {prob.summary}
-                          </div>
-                        </td>
+                          </h3>
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                          {prob.summary}
+                        </p>
+                      </div>
 
-                        {/* Health Score Indicator */}
-                        <td className="py-4 px-6 text-center">
-                          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-extrabold font-mono shadow-sm ${badge.bg}">
-                            <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
-                            <span>● {prob.health_score}</span>
-                            <span className="text-[10px] opacity-80 uppercase font-sans font-semibold">{badge.label}</span>
-                          </div>
-                        </td>
+                      {/* Score Gauge Badge */}
+                      <div className="text-right shrink-0">
+                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-extrabold border ${badge.bg}`}>
+                          <span>{prob.health_score}</span>
+                          <span className="text-[9px] uppercase tracking-wider opacity-90">{badge.label}</span>
+                        </div>
+                      </div>
+                    </div>
 
-                        <td className="py-4 px-6 text-center font-mono font-bold text-zinc-200 text-sm">
-                          {prob.total_reports.toLocaleString()}
-                        </td>
-
-                        <td className="py-4 px-6 text-center">
-                          <span className={`text-xs font-bold ${prob.trend.includes('↑') ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {prob.trend}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6 font-bold text-xs uppercase tracking-wider">
-                          <span className={prob.priority === 'Critical' ? 'text-red-400 font-extrabold' : 'text-amber-400'}>
-                            {prob.priority}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6 text-zinc-300 font-medium">
-                          <span className="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px]">
-                            {prob.assigned_team}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6">
-                          <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md border ${
-                            prob.status === 'In Progress' ? 'bg-indigo-500/10 border-indigo-500/25 text-indigo-400' :
-                            prob.status === 'Resolved' ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400' :
-                            'bg-zinc-800 border-zinc-700 text-zinc-300'
-                          }`}>
-                            {prob.status}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-6 text-right">
-                          <button className="text-zinc-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition">
-                            <ArrowRight className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-xs font-mono">
+                      <div className="flex items-center gap-4 text-zinc-400">
+                        <span><strong>{prob.total_reports.toLocaleString()}</strong> reports</span>
+                        <span className={`font-bold ${prob.trend.includes('↑') ? 'text-red-400' : 'text-emerald-400'}`}>{prob.trend}</span>
+                        <span>Team: <strong className="text-zinc-200">{prob.assigned_team}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1 text-indigo-400 font-semibold hover:translate-x-1 transition">
+                        <span>View Details</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
+          </div>
+
+          {/* Right: AI Intelligence Panel & Activity Feed */}
+          <div className="space-y-6">
+            
+            {/* EchoOps Intelligence Panel */}
+            <div className="glass-panel p-5 rounded-2xl border border-white/[0.06] bg-[#08080A] space-y-4">
+              <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-indigo-400" /> ✦ EchoOps Intelligence
+              </h3>
+
+              <div className="space-y-3">
+                {aiInsights.map((insight, idx) => {
+                  const Icon = insight.icon;
+                  return (
+                    <div key={idx} className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] space-y-1 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className={`flex items-center gap-1.5 font-bold ${insight.color}`}>
+                          <Icon className="w-3.5 h-3.5" /> Alert
+                        </span>
+                        <span className="text-[9px] font-mono text-zinc-500">{insight.time}</span>
+                      </div>
+                      <p className="text-zinc-300 font-sans leading-relaxed">{insight.text}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Minimal Recent Activity Timeline */}
+            <div className="glass-panel p-5 rounded-2xl border border-white/[0.06] bg-[#08080A] space-y-3">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider font-mono">Recent Activity</h3>
+              <div className="space-y-3 relative border-l border-white/[0.06] ml-2 pl-4 text-xs font-mono">
+                {recentActivity.map((act, idx) => (
+                  <div key={idx} className="relative space-y-0.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500 absolute -left-[21px] top-1" />
+                    <div className="font-semibold text-zinc-200">{act.text}</div>
+                    <div className="text-[10px] text-zinc-400 flex items-center justify-between">
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${act.badge}`}>{act.sub}</span>
+                      <span className="text-zinc-500">{act.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
 
         </div>
 

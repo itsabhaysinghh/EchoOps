@@ -22,20 +22,18 @@ interface IntegrationCard {
   description: string;
   connected: boolean;
   statusText?: string;
-  category: 'Engineering' | 'Communication' | 'Feedback';
 }
 
 export default function Integrations() {
   const [integrations, setIntegrations] = useState<IntegrationCard[]>([
-    { id: 'jira', tool_name: 'Jira', description: 'Create and sync engineering issues directly from EchoOps.', connected: true, statusText: 'Workspace: Acme Engineering (PAY, MOBILE, WEB)', category: 'Engineering' },
-    { id: 'github', tool_name: 'GitHub', description: 'Automatically open GitHub repository issues from feedback clusters.', connected: true, statusText: 'Connected to acme-saas/echoops', category: 'Engineering' },
-    { id: 'gitlab', tool_name: 'GitLab', description: 'Sync issues, MRs, and release trackers with EchoOps.', connected: false, category: 'Engineering' },
-    { id: 'linear', tool_name: 'Linear', description: 'Streamlined issue tracking and cycle sync for engineering.', connected: false, category: 'Engineering' },
-    { id: 'trello', tool_name: 'Trello', description: 'Push customer cards to Trello product boards.', connected: false, category: 'Engineering' },
-    { id: 'clickup', tool_name: 'ClickUp', description: 'Manage tasks and feature requests in ClickUp.', connected: false, category: 'Engineering' },
-    { id: 'azure', tool_name: 'Azure DevOps', description: 'Sync work items and release pipelines.', connected: false, category: 'Engineering' },
-    { id: 'slack', tool_name: 'Slack', description: 'Get real-time alerts for critical customer problems in #feedback.', connected: true, statusText: 'Webhook Active (#customer-alerts)', category: 'Communication' },
-    { id: 'teams', tool_name: 'Microsoft Teams', description: 'Broadcast executive summaries to Teams channels.', connected: false, category: 'Communication' }
+    { id: 'jira', tool_name: 'Jira', description: 'Create and sync engineering issues directly from EchoOps.', connected: true, statusText: 'Acme Engineering (PAY, MOBILE, WEB)' },
+    { id: 'github', tool_name: 'GitHub', description: 'Automatically open GitHub repository issues from feedback clusters.', connected: true, statusText: 'Connected to acme-saas/echoops' },
+    { id: 'linear', tool_name: 'Linear', description: 'Streamlined issue tracking and cycle sync for engineering.', connected: false },
+    { id: 'trello', tool_name: 'Trello', description: 'Push customer cards to Trello product boards.', connected: false },
+    { id: 'clickup', tool_name: 'ClickUp', description: 'Manage tasks and feature requests in ClickUp.', connected: false },
+    { id: 'azure', tool_name: 'Azure DevOps', description: 'Sync work items and release pipelines.', connected: false },
+    { id: 'slack', tool_name: 'Slack', description: 'Get real-time alerts for critical customer problems in #feedback.', connected: true, statusText: 'Active (#customer-alerts)' },
+    { id: 'teams', tool_name: 'Microsoft Teams', description: 'Broadcast executive summaries to Teams channels.', connected: false }
   ]);
 
   const [jiraModalOpen, setJiraModalOpen] = useState(false);
@@ -48,7 +46,7 @@ export default function Integrations() {
       setJiraStep(1);
       setJiraModalOpen(true);
     } else {
-      setIntegrations(prev => prev.map(i => i.tool_name === toolName ? { ...i, connected: !i.connected, statusText: !i.connected ? '● Connected' : undefined } : i));
+      setIntegrations(prev => prev.map(i => i.tool_name === toolName ? { ...i, connected: !i.connected } : i));
       setToast(`✓ Updated ${toolName} connection status`);
       setTimeout(() => setToast(null), 3000);
     }
@@ -58,7 +56,7 @@ export default function Integrations() {
     e.preventDefault();
     setJiraStep(2);
     setTimeout(() => {
-      setIntegrations(prev => prev.map(i => i.id === 'jira' ? { ...i, connected: true, statusText: 'Workspace: Acme Engineering (PAY, MOBILE, WEB)' } : i));
+      setIntegrations(prev => prev.map(i => i.id === 'jira' ? { ...i, connected: true, statusText: 'Acme Engineering (PAY, MOBILE, WEB)' } : i));
       setToast('✓ Jira Connected successfully to Acme Engineering!');
       setTimeout(() => setToast(null), 4000);
     }, 1200);
@@ -70,44 +68,20 @@ export default function Integrations() {
         
         {/* Toast Alert */}
         {toast && (
-          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-zinc-900 border border-emerald-500/40 text-emerald-400 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in">
+          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-[#08080A] border border-emerald-500/40 text-emerald-400 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in">
             <Check className="w-4 h-4" />
             <span>{toast}</span>
           </div>
         )}
 
         {/* Header */}
-        <div className="border-b border-zinc-850 pb-4">
-          <h1 className="text-2xl font-extrabold text-white font-heading">
-            Integrations
+        <div className="border-b border-white/[0.06] pb-4">
+          <h1 className="text-2xl font-bold text-white font-heading">
+            Connect your workflow
           </h1>
           <p className="text-xs sm:text-sm text-zinc-400 mt-1">
-            Connect EchoOps with the tools your engineering & support teams already use.
+            Connect EchoOps with Jira, GitHub, Linear, Slack, and your engineering stack.
           </p>
-        </div>
-
-        {/* Integration Architecture Flow Box */}
-        <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] glow-ai-card space-y-3">
-          <div className="flex justify-between items-center text-xs font-mono font-bold text-indigo-400">
-            <span className="flex items-center gap-1.5 uppercase">
-              <Zap className="w-4 h-4 text-indigo-400" /> Integration Sync Pipeline Status
-            </span>
-            <span className="text-zinc-500">Last synced 2 minutes ago</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 text-center text-xs font-mono pt-1">
-            <div className="p-2.5 rounded-xl bg-[#050505] border border-zinc-800 font-bold text-zinc-200">
-              EchoOps
-            </div>
-            <div className="flex items-center justify-center text-zinc-600 font-bold">↓</div>
-            <div className="p-2.5 rounded-xl bg-[#050505] border border-zinc-800 font-bold text-indigo-400">
-              Jira (PAY-4821)
-            </div>
-            <div className="flex items-center justify-center text-zinc-600 font-bold">↓</div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 font-bold text-emerald-400">
-              In Progress → Done → Resolved
-            </div>
-          </div>
         </div>
 
         {/* Integration Cards Grid */}
@@ -115,11 +89,11 @@ export default function Integrations() {
           {integrations.map((tool) => (
             <div 
               key={tool.id}
-              className="glass-panel p-5 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] card-hover flex flex-col justify-between space-y-4"
+              className="glass-panel p-5 rounded-2xl border border-white/[0.06] bg-[#08080A] card-hover flex flex-col justify-between space-y-4"
             >
               <div className="space-y-3">
                 <div className="flex justify-between items-start">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center p-2">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center p-2">
                     <IntegrationIcon name={tool.tool_name} />
                   </div>
                   {tool.connected ? (
@@ -128,7 +102,7 @@ export default function Integrations() {
                       Connected
                     </span>
                   ) : (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono bg-zinc-800 text-zinc-400">
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold font-mono bg-white/[0.04] text-zinc-400">
                       Disconnected
                     </span>
                   )}
@@ -140,19 +114,19 @@ export default function Integrations() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-zinc-850 flex items-center justify-between">
+              <div className="pt-3 border-t border-white/[0.04] flex items-center justify-between">
                 {tool.statusText ? (
                   <span className="text-[10px] font-mono text-zinc-500 truncate max-w-[170px]">{tool.statusText}</span>
                 ) : (
-                  <span className="text-[10px] font-mono text-zinc-600">Common Integration API</span>
+                  <span className="text-[10px] font-mono text-zinc-600">Available</span>
                 )}
 
                 <button
                   onClick={() => handleConnectClick(tool.tool_name)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                     tool.connected
-                      ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
-                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md'
+                      ? 'bg-white/[0.04] hover:bg-white/[0.08] text-zinc-300'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow'
                   }`}
                 >
                   {tool.connected ? 'Manage' : 'Connect'}
@@ -167,7 +141,7 @@ export default function Integrations() {
       {/* Jira OAuth Connection Modal Flow */}
       {jiraModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-[#0B0B0F] border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl relative">
+          <div className="w-full max-w-md bg-[#0C0C10] border border-white/[0.08] rounded-2xl p-6 space-y-4 shadow-2xl relative">
             <button 
               onClick={() => setJiraModalOpen(false)} 
               className="absolute top-4 right-4 text-zinc-500 hover:text-white"
@@ -178,7 +152,7 @@ export default function Integrations() {
             {jiraStep === 1 ? (
               <form onSubmit={handleJiraConnectSubmit} className="space-y-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center p-2">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center p-2">
                     <IntegrationIcon name="Jira" />
                   </div>
                   <div>
@@ -195,13 +169,13 @@ export default function Integrations() {
                     value={jiraUrl}
                     onChange={(e) => setJiraUrl(e.target.value)}
                     placeholder="https://yourcompany.atlassian.net"
-                    className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-[#050505] border border-white/[0.08] rounded-xl p-3 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md transition"
+                  className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow transition"
                 >
                   Connect with Jira (OAuth 2.0)
                 </button>

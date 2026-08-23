@@ -199,38 +199,38 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Top Nav AI Copilot Drawer */}
       <AIChatDrawer isOpen={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)} />
 
-      {/* Desktop 250px Sidebar */}
-      <aside className="hidden md:flex w-[250px] bg-[#080808] border-r border-zinc-800/70 flex-col z-20 shrink-0 select-none">
+      {/* Desktop 230px Sidebar */}
+      <aside className="hidden md:flex w-[230px] bg-[#050505] border-r border-white/[0.06] flex-col z-20 shrink-0 select-none">
         
         {/* Brand Header */}
-        <div className="p-4 border-b border-zinc-850 flex items-center justify-between">
+        <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => router.push('/')}>
-            <div className="w-8 h-8 rounded-xl bg-black border border-zinc-800 flex items-center justify-center p-1 shadow-md shadow-indigo-500/10 overflow-hidden">
+            <div className="w-7 h-7 rounded-xl bg-black border border-white/[0.08] flex items-center justify-center p-1 overflow-hidden shrink-0">
               <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <span className="font-extrabold text-base tracking-tight text-white font-heading">EchoOps</span>
-              <span className="text-[9px] block text-zinc-500 font-mono tracking-wider font-semibold">FEEDBACK OS</span>
+              <span className="font-bold text-sm tracking-tight text-white font-heading">EchoOps</span>
+              <span className="text-[9px] block text-zinc-500 font-mono tracking-wider">PRODUCT OS</span>
             </div>
           </div>
         </div>
 
         {/* Workspace Selector */}
-        <div className="px-3 py-2.5 border-b border-zinc-850/60">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-[#0D0D12] border border-zinc-800/60 text-xs cursor-pointer hover:bg-zinc-850 transition">
+        <div className="px-3 py-2.5 border-b border-white/[0.06]">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs cursor-pointer hover:bg-white/[0.06] transition">
             <div className="flex items-center gap-2">
               <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="font-medium truncate max-w-[130px] text-zinc-200">{workspace}</span>
+              <span className="font-medium truncate max-w-[120px] text-zinc-200">{workspace}</span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
           </div>
         </div>
 
         {/* Navigation Sections */}
-        <nav className="flex-1 px-2 py-3 space-y-5 overflow-y-auto">
+        <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto">
           {navSections.map((section) => (
-            <div key={section.title} className="space-y-1">
-              <div className="px-3 text-[10px] uppercase font-mono font-bold text-zinc-500 tracking-wider mb-1">
+            <div key={section.title} className="space-y-0.5">
+              <div className="px-3 text-[10px] uppercase font-mono font-semibold text-zinc-500 tracking-wider mb-1">
                 {section.title}
               </div>
               {section.items.map((item) => {
@@ -240,13 +240,13 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition duration-200 ${
+                    className={`relative flex items-center gap-2.5 px-3 py-1.5 rounded-md text-xs font-medium transition duration-150 ${
                       isActive 
-                        ? 'bg-zinc-800/60 text-white font-semibold border border-zinc-700/50 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-ai-gradient' 
-                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60'
+                        ? 'bg-white/[0.07] text-white font-semibold before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:rounded-r-full before:bg-ai-gradient' 
+                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
                     <span>{item.name}</span>
                   </Link>
                 );
