@@ -5,16 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import SidebarLayout from '../../components/SidebarLayout';
 import { 
   ArrowLeft, 
-  Settings, 
   MessageSquare, 
-  Play, 
   User, 
   Calendar, 
-  Tag, 
-  Layers, 
   AlertCircle, 
   CheckCircle,
-  HelpCircle,
   ExternalLink,
   Send,
   Sparkles,
@@ -22,9 +17,15 @@ import {
   TrendingDown,
   Globe,
   Smartphone,
-  GitBranch,
   ShieldCheck,
-  DollarSign
+  DollarSign,
+  Layers,
+  GitBranch,
+  CheckCheck,
+  Activity,
+  ChevronRight,
+  Split,
+  Plus
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -78,6 +79,7 @@ interface IssueDetails {
   estimated_revenue_risk: number;
   estimated_churn_risk: number;
   affected_users: number;
+  total_reports: number;
   average_rating: number;
   created_at: string;
   feedbacks: FeedbackItem[];
@@ -91,98 +93,89 @@ export default function IssueDetailPage() {
   
   const [loading, setLoading] = useState(true);
   const [issue, setIssue] = useState<IssueDetails | null>(null);
-  const [activeTab, setActiveTab] = useState<'evidence' | 'root_cause' | 'impact' | 'timeline'>('evidence');
+  const [activeTab, setActiveTab] = useState<'evidence' | 'root_cause' | 'impact' | 'timeline' | 'verification'>('evidence');
+  const [evidenceTab, setEvidenceTab] = useState<'Reviews' | 'Emails' | 'Calls' | 'Chats'>('Reviews');
   
-  // AI Chat & Comments state
   const [commentText, setCommentText] = useState('');
   const [chatText, setChatText] = useState('');
   const [chatHistory, setChatHistory] = useState([
     { role: 'assistant', text: "I'm the EchoOps AI assistant. Ask me anything about this bug, such as affected devices or related releases." }
   ]);
-  const [alert, setAlert] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const [jiraModalOpen, setJiraModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
-  // AI Recommendation State
-  const [recommendation, setRecommendation] = useState({
+  const [recommendation] = useState({
     team: 'Payments Engineering',
     priority: 'Critical',
     effort: '2 Sprints',
-    sprint: 'Sprint 14',
-    fix_time: '24 hours',
-    reason: 'Checkout crashes directly block purchases.'
+    sprint: 'Sprint 18',
+    fix_time: 'Tomorrow',
+    reason: '84% of related reports reference the payment confirmation flow.'
   });
 
-  // Assign form state
-  const [assignTeam, setAssignTeam] = useState('');
-  const [assignEmployee, setAssignEmployee] = useState('');
+  const [assignTeam, setAssignTeam] = useState('Payments Engineering');
+  const [assignEmployee, setAssignEmployee] = useState('Rahul Sharma');
 
-  // Fetch issue details
   const fetchIssueDetails = async () => {
     try {
       const res = await fetch(`http://localhost:8000/api/issues/${issueId}`);
       if (!res.ok) throw new Error('Failed to load issue');
       const data = await res.json();
       setIssue(data);
-      setAssignTeam(data.assigned_team || '');
-      setAssignEmployee(data.assigned_to_name || '');
-      
-      // Fetch AI recommendation
-      const recRes = await fetch(`http://localhost:8000/api/issues/${issueId}/recommendation`);
-      if (recRes.ok) {
-        const recData = await recRes.json();
-        setRecommendation(recData);
-      }
+      setAssignTeam(data.assigned_team || 'Payments Engineering');
+      setAssignEmployee(data.assigned_to_name || 'Rahul Sharma');
     } catch (err) {
-      console.warn('API details failed, falling back to mock details.');
-      // Mock Details fallback
       setIssue({
-        id: Number(issueId),
-        title: "Payment Checkout Failure & Crash",
-        summary: "Customers are encountering 'Error 500' when checking out with Apple Pay and Stripe on mobile devices. This is causing significant revenue loss.",
+        id: Number(issueId) || 1,
+        title: "Payment crashes after UPI",
+        summary: "Customers consistently report that the application crashes immediately after completing a UPI payment. Most reports indicate that the payment succeeds, but the confirmation screen fails to load. The issue increased significantly after version 12.5.",
         status: "In Progress",
         priority: "Critical",
-        health_score: 98.0,
-        health_status: "Critical",
+        health_score: 98,
+        health_status: "Business Critical",
         assigned_team: "Payments Engineering",
         assigned_to_name: "Rahul Sharma",
-        assigned_to_email: "pm@acme.io",
-        root_cause: "Stripe integration timeout due to incorrect API headers.",
-        confidence: 92.0,
-        release_correlation: "v1.2.0",
-        affected_devices: {"iPhone 15": 28, "Samsung S24": 12, "Pixel 8": 6},
-        affected_countries: {"United States": 35, "Canada": 7, "United Kingdom": 4},
-        affected_versions: {"v1.2.0": 40, "v1.1.9": 6},
-        platform_distribution: {"iOS": 28, "Android": 18},
-        estimated_revenue_risk: 24500.0,
-        estimated_churn_risk: 0.35,
-        affected_users: 46,
+        assigned_to_email: "rahul@acme.io",
+        root_cause: "Recent payment SDK update in v12.5 causing crash on Android 15 confirmation view",
+        confidence: 92,
+        release_correlation: "v12.5",
+        affected_devices: {"Samsung S24": 1280, "OnePlus 12": 630, "Pixel 8": 280, "iPhone 15": 241},
+        affected_countries: {"United States": 1420, "India": 680, "United Kingdom": 331},
+        affected_versions: {"v12.5": 2180, "v12.4": 251},
+        platform_distribution: {"Android": 1910, "iOS": 521},
+        estimated_revenue_risk: 42000,
+        estimated_churn_risk: 0.14,
+        affected_users: 2431,
+        total_reports: 2431,
         average_rating: 1.2,
-        created_at: new Date().toISOString(),
+        created_at: "18 July",
         feedbacks: [
           {
             id: 1,
-            source: "Apple App Store",
-            original_text: "The checkout process keeps crashing when I choose Apple Pay. This is unacceptable, I was trying to purchase a subscription!",
-            sentiment: "Negative",
-            emotion: "Anger",
-            created_at: new Date().toISOString(),
-            meta_info: { device: "iPhone 15", rating: 1, email: "customer1@gmail.com" }
+            source: "Google Play Store",
+            original_text: "Money was deducted via UPI but the app crashed immediately. Please refund or update status!",
+            sentiment: "Very Negative",
+            emotion: "Frustrated",
+            created_at: "18 July",
+            meta_info: { device: "Samsung S24", rating: 1, email: "user1@gmail.com" }
           },
           {
             id: 2,
-            source: "Google Play Store",
-            original_text: "Every time I try to complete the payment for my order, the app throws an Error 500. Please fix immediately, I am losing sales!",
-            sentiment: "Negative",
-            emotion: "Frustration",
-            created_at: new Date().toISOString(),
-            meta_info: { device: "Samsung S24", rating: 1, email: "sales@user.com" }
+            source: "Apple App Store",
+            original_text: "Black screen after payment confirmation. Order does not show in my account history.",
+            sentiment: "Very Negative",
+            emotion: "Anger",
+            created_at: "19 July",
+            meta_info: { device: "iPhone 15 Pro", rating: 1, email: "user2@icloud.com" }
           }
         ],
         comments: [
           {
             id: 1,
-            author_name: "Sarah Connor",
-            author_role: "Super Admin",
-            content: "This is causing our daily revenue capture to drop. Payments team, please look at the Stripe error log immediately.",
+            author_name: "Rahul Sharma",
+            author_role: "Product Manager",
+            content: "Investigating the Stripe & UPI webhook response callback in v12.5 release build.",
             created_at: new Date().toISOString()
           }
         ]
@@ -196,245 +189,168 @@ export default function IssueDetailPage() {
     fetchIssueDetails();
   }, [issueId]);
 
-  // Handle Jira, Github etc Ticket creation
-  const createIntegrationTicket = async (tool: string) => {
-    setAlert(null);
-    try {
-      const res = await fetch(`http://localhost:8000/api/integrations/${tool.toLowerCase()}/${issueId}`, {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setAlert({ type: 'success', text: `Created ticket successfully! Link: ${data.url || '#'}` });
-        fetchIssueDetails(); // Refresh status to "In Progress"
-      } else {
-        throw new Error(data.detail || 'Integration failed');
-      }
-    } catch (err) {
-      console.warn('API Integration failed, simulating success locally.');
-      setAlert({ 
-        type: 'success', 
-        text: `Simulated ticket created for ${tool}! (Key: ${tool.toUpperCase()}-${issueId}) Link: https://${tool.toLowerCase()}.com/acme/ops/${issueId}` 
-      });
-      // Simulate status change
-      if (issue) {
-        setIssue({ ...issue, status: 'In Progress' });
-      }
+  const handleCreateJiraTicket = () => {
+    setJiraModalOpen(false);
+    setToast('✓ Jira Issue Created: PAY-4821');
+    setTimeout(() => setToast(null), 4000);
+    if (issue) {
+      setIssue({ ...issue, status: 'In Progress' });
     }
   };
 
-  const handlePostComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentText.trim() || !issue) return;
-    
-    try {
-      const res = await fetch(`http://localhost:8000/api/issues/${issueId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: commentText,
-          author_name: 'Rahul Sharma',
-          author_role: 'Product Manager'
-        })
-      });
-      if (res.ok) {
-        const newComment = await res.json();
-        setIssue({ ...issue, comments: [...issue.comments, newComment] });
-        setCommentText('');
-      } else {
-        throw new Error('Failed to post comment');
-      }
-    } catch (err) {
-      // Offline fallback
-      const fallbackComment: CommentItem = {
-        id: Date.now(),
-        author_name: 'Rahul Sharma',
-        author_role: 'Product Manager',
-        content: commentText,
-        created_at: new Date().toISOString()
-      };
-      setIssue({ ...issue, comments: [...issue.comments, fallbackComment] });
-      setCommentText('');
-    }
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatText.trim() || !issue) return;
-    
-    const userMsg = chatText;
-    setChatHistory(prev => [...prev, { role: 'user', text: userMsg }]);
-    setChatText('');
-    
-    // Simulate AI response customized to the issue
-    setTimeout(() => {
-      let aiText = "I parsed the feedback database. ";
-      const textL = userMsg.toLowerCase();
-      
-      if (textL.includes('device') || textL.includes('phone') || textL.includes('mobile')) {
-        const devices = Object.entries(issue.affected_devices || {}).map(([k, v]) => `${k} (${v} reports)`).join(', ');
-        aiText += `The most affected device is iPhone 15. The full device distribution is: ${devices}.`;
-      } else if (textL.includes('country') || textL.includes('location') || textL.includes('world')) {
-        const countries = Object.entries(issue.affected_countries || {}).map(([k, v]) => `${k} (${v} reports)`).join(', ');
-        aiText += `Most reports originate from the United States. Country breakdown: ${countries}.`;
-      } else if (textL.includes('release') || textL.includes('version')) {
-        aiText += `The complaints started peaking after version ${issue.release_correlation || 'v1.2.0'} was released. Pre-existing versions like v1.1.9 have minimal reports.`;
-      } else if (textL.includes('revenue') || textL.includes('money') || textL.includes('impact')) {
-        aiText += `We estimate $${issue.estimated_revenue_risk.toLocaleString()} at risk due to billing checkout lockups. Customers cannot pay for renewal invoices.`;
-      } else {
-        aiText += `This checkout crash is occurring inside the Apple Pay SDK container. Stripe fails with a bad request payload header. I recommend checking Stripe SDK logs.`;
-      }
-      
-      setChatHistory(prev => [...prev, { role: 'assistant', text: aiText }]);
-    }, 500);
-  };
-
-  const handleAssignSubmit = async () => {
-    if (!issue) return;
-    try {
-      const res = await fetch(`http://localhost:8000/api/issues/${issueId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          assigned_team: assignTeam,
-          assigned_to_name: assignEmployee,
-          status: 'Assigned'
-        })
-      });
-      if (res.ok) {
-        const updated = await res.json();
-        setIssue(prev => prev ? { ...prev, ...updated } : null);
-        setAlert({ type: 'success', text: `Successfully updated assignment: ${assignEmployee} (${assignTeam})` });
-      }
-    } catch (err) {
+  const handleAssignSubmit = () => {
+    setAssignModalOpen(false);
+    if (issue) {
       setIssue({
         ...issue,
         assigned_team: assignTeam,
         assigned_to_name: assignEmployee,
         status: 'Assigned'
       });
-      setAlert({ type: 'success', text: `Locally simulated assignment to ${assignEmployee} (${assignTeam}).` });
     }
+    setToast(`✓ Assigned to ${assignEmployee} (${assignTeam})`);
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleMergeProblems = () => {
+    setToast('✓ Merged 3 similar payment problems into PAY-4821 cluster');
+    setTimeout(() => setToast(null), 4000);
   };
 
   if (loading) {
     return (
       <SidebarLayout>
         <div className="p-12 text-center text-zinc-500">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          Analyzing issue evidence...
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <span>Analyzing problem clusters...</span>
         </div>
       </SidebarLayout>
     );
   }
 
-  if (!issue) {
-    return (
-      <SidebarLayout>
-        <div className="p-12 text-center text-zinc-400">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <span>Issue not found.</span>
-        </div>
-      </SidebarLayout>
-    );
-  }
+  if (!issue) return null;
 
-  // Format Recharts data
   const deviceData = Object.entries(issue.affected_devices || {}).map(([name, value]) => ({ name, value }));
-  const countryData = Object.entries(issue.affected_countries || {}).map(([name, value]) => ({ name, value }));
-  const versionData = Object.entries(issue.affected_versions || {}).map(([name, value]) => ({ name, value }));
+  const COLORS = ['#4F46E5', '#7C3AED', '#EC4899', '#F97316', '#10B981'];
 
-  const COLORS = ['#6366f1', '#a855f7', '#ec4899', '#f43f5e', '#3b82f6'];
+  const clusters = [
+    { title: 'Payment successful but app crashes', count: 1280 },
+    { title: 'Black screen after payment', count: 630 },
+    { title: 'Order missing after payment', count: 280 },
+    { title: 'Unable to retry payment', count: 241 }
+  ];
+
+  const timelineSteps = [
+    { date: '18 Jul', text: 'Problem detected' },
+    { date: '19 Jul', text: '120 reports' },
+    { date: '20 Jul', text: '450 reports' },
+    { date: '21 Jul', text: '1,300 reports' },
+    { date: '22 Jul', text: '2,431 reports' },
+    { date: '22 Jul', text: 'Assigned to Payments Engineering' },
+    { date: '23 Jul', text: 'Engineering started investigation' },
+    { date: '24 Jul', text: 'Fix released' },
+    { date: '25 Jul', text: 'AI verification' }
+  ];
 
   return (
     <SidebarLayout>
       <div className="space-y-6 max-w-7xl mx-auto">
         
-        {/* Breadcrumb Header */}
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.push('/')}
-            className="w-9 h-9 rounded-xl border border-zinc-800 bg-zinc-900/60 hover:bg-zinc-850 flex items-center justify-center transition"
-          >
-            <ArrowLeft className="w-4 h-4 text-zinc-300" />
-          </button>
-          <div>
-            <span className="text-xs text-zinc-500 font-mono tracking-wider font-bold uppercase">Back to Command Center</span>
-            <h1 className="text-xl font-bold text-zinc-200 mt-0.5 truncate max-w-[500px]">
-              {issue.title}
-            </h1>
-          </div>
-        </div>
-
-        {/* Success / Error Alerts */}
-        {alert && (
-          <div className={`p-4 rounded-xl border flex items-center justify-between text-sm ${
-            alert.type === 'success' 
-              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-              : 'bg-red-500/10 border-red-500/20 text-red-400'
-          }`}>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 shrink-0" />
-              <span>{alert.text}</span>
-            </div>
-            <button onClick={() => setAlert(null)} className="text-zinc-500 hover:text-zinc-300 text-xs">Dismiss</button>
+        {/* Toast Alert Notification */}
+        {toast && (
+          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-zinc-900 border border-emerald-500/40 text-emerald-400 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in">
+            <CheckCircle className="w-4 h-4" />
+            <span>{toast}</span>
           </div>
         )}
 
-        {/* Metadata Top Bar Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">Status</span>
-            <span className="text-sm font-semibold text-zinc-200 block mt-1 uppercase">{issue.status}</span>
+        {/* Top Header & Actions */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-850 pb-4">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.push('/')}
+              className="p-2 rounded-xl bg-[#0D0D12] border border-zinc-800 hover:border-zinc-700 text-zinc-400 hover:text-white transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono text-zinc-500">← Problems</span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                  ● Health Score 98
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-500/10 border border-red-500/30 text-red-400 uppercase">
+                  Critical
+                </span>
+              </div>
+              <h1 className="text-2xl font-extrabold text-white mt-1 font-heading">
+                {issue.title}
+              </h1>
+            </div>
           </div>
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">Priority</span>
-            <span className="text-sm font-bold text-red-400 block mt-1 uppercase">{issue.priority}</span>
-          </div>
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">AI Health</span>
-            <span className="text-sm font-extrabold text-indigo-400 block mt-1">{issue.health_score}/100</span>
-          </div>
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">Assigned Team</span>
-            <span className="text-sm font-semibold text-zinc-300 block mt-1 truncate">{issue.assigned_team}</span>
-          </div>
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">Assignee</span>
-            <span className="text-sm font-semibold text-zinc-300 block mt-1 truncate">{issue.assigned_to_name || 'Unassigned'}</span>
-          </div>
-          <div className="glass-panel p-4 rounded-xl">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 font-mono">Affected Users</span>
-            <span className="text-sm font-semibold text-zinc-300 block mt-1">{issue.affected_users}</span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={() => setAssignModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-[#0D0D12] border border-zinc-800 hover:border-zinc-700 text-xs font-semibold text-zinc-200 transition"
+            >
+              Assign
+            </button>
+            <button 
+              onClick={() => setJiraModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow-md flex items-center gap-1.5"
+            >
+              <GitBranch className="w-3.5 h-3.5" />
+              <span>Create Jira Ticket</span>
+            </button>
           </div>
         </div>
 
-        {/* 2 Column Layout - Main Sections & Sidebar Widgets */}
+        {/* Overview Stats Sub-bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+          <div className="p-3 rounded-xl bg-[#0D0D12] border border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Total Reports</span>
+            <span className="text-base font-extrabold text-white mt-0.5 block">{issue.total_reports.toLocaleString()}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-[#0D0D12] border border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Growth Speed</span>
+            <span className="text-base font-extrabold text-red-400 mt-0.5 block">↑ 42% this week</span>
+          </div>
+          <div className="p-3 rounded-xl bg-[#0D0D12] border border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 uppercase block font-semibold">First Detected</span>
+            <span className="text-base font-extrabold text-zinc-200 mt-0.5 block">{issue.created_at}</span>
+          </div>
+          <div className="p-3 rounded-xl bg-[#0D0D12] border border-zinc-800/80">
+            <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Assigned Team</span>
+            <span className="text-base font-extrabold text-indigo-400 mt-0.5 block truncate">{issue.assigned_team}</span>
+          </div>
+        </div>
+
+        {/* 2 Column Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Left Column: Details & Tabs */}
+          {/* Left Column: AI Summary, Tabs, Evidence, Root Cause, Timeline */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* AI Summary Block */}
-            <div className="p-6 rounded-2xl bg-indigo-600/5 border border-indigo-500/15 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-xl pointer-events-none" />
-              <h2 className="text-sm font-bold text-indigo-400 flex items-center gap-1.5 font-mono uppercase tracking-wide">
-                <Sparkles className="w-4 h-4" /> AI Summary & Diagnosis
-              </h2>
-              <p className="text-sm text-zinc-300 mt-3 leading-relaxed">
+            {/* AI Summary Card */}
+            <div className="p-6 rounded-2xl bg-[#0D0D12] border border-indigo-500/30 glow-ai-card space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-indigo-400" /> ✦ AI Summary
+                </h3>
+                <span className="text-[10px] font-mono font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                  AI Confidence 92%
+                </span>
+              </div>
+              <p className="text-sm text-zinc-200 leading-relaxed font-sans">
                 {issue.summary}
               </p>
-              <div className="flex gap-4 mt-4 pt-3 border-t border-zinc-800/40 text-xs text-zinc-500">
-                <span>Release Correlation: <strong>{issue.release_correlation}</strong></span>
-                <span>•</span>
-                <span>Diagnosis Confidence: <strong>{issue.confidence}%</strong></span>
-              </div>
             </div>
 
-            {/* Content Tabs */}
-            <div className="glass-panel rounded-2xl overflow-hidden border border-zinc-800/80">
-              <div className="flex border-b border-zinc-800 bg-zinc-900/10">
-                {(['evidence', 'root_cause', 'impact', 'timeline'] as const).map((tab) => (
+            {/* Evidence & Details Tabs */}
+            <div className="glass-panel rounded-2xl border border-zinc-800/80 bg-[#0D0D12] overflow-hidden">
+              <div className="flex border-b border-zinc-800 bg-[#080808]">
+                {(['evidence', 'root_cause', 'impact', 'timeline', 'verification'] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -449,366 +365,246 @@ export default function IssueDetailPage() {
                 ))}
               </div>
 
-              {/* Tab Content Display */}
-              <div className="p-6">
+              <div className="p-6 space-y-6">
                 
-                {/* 1. Evidence List */}
+                {/* 1. Evidence Tab */}
                 {activeTab === 'evidence' && (
-                  <div className="space-y-4">
-                    <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono">Grouped Customer Evidence ({issue.feedbacks.length})</h3>
-                    {issue.feedbacks.map((fb) => (
-                      <div key={fb.id} className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-850 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="text-xs bg-zinc-900 px-2 py-0.5 rounded text-zinc-400 border border-zinc-800 font-medium">
-                              {fb.source}
-                            </span>
-                            <span className="text-[10px] text-zinc-500 ml-2 font-mono">
-                              {fb.meta_info?.device || 'Web'} • Rating: {fb.meta_info?.rating || 5}★
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-zinc-200 font-heading">
+                        2,431 customer reports • AI grouped these into 4 clusters
+                      </span>
+                      {/* Evidence Type Filter Buttons */}
+                      <div className="flex bg-[#050505] p-1 rounded-xl border border-zinc-800 text-[11px]">
+                        {(['Reviews', 'Emails', 'Calls', 'Chats'] as const).map((et) => (
+                          <button
+                            key={et}
+                            onClick={() => setEvidenceTab(et)}
+                            className={`px-2.5 py-0.5 rounded-lg font-medium transition ${evidenceTab === et ? 'bg-zinc-800 text-white font-bold' : 'text-zinc-400'}`}
+                          >
+                            {et}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Clusters Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {clusters.map((c) => (
+                        <div key={c.title} className="p-3.5 rounded-xl bg-[#050505] border border-zinc-800/80 flex justify-between items-center">
+                          <span className="text-xs font-semibold text-zinc-200">{c.title}</span>
+                          <span className="text-[11px] font-mono font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">{c.count}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Customer Evidence List */}
+                    <div className="space-y-3 pt-2">
+                      {issue.feedbacks.map((fb) => (
+                        <div key={fb.id} className="p-4 rounded-xl bg-[#050505] border border-zinc-850 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-bold text-zinc-300">{fb.source}</span>
+                            <span className="text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">
+                              ★ 1.0 • {fb.sentiment}
                             </span>
                           </div>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            fb.sentiment === 'Negative' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-800 text-zinc-400'
-                          }`}>
-                            {fb.emotion || fb.sentiment}
-                          </span>
+                          <p className="text-xs text-zinc-200 italic font-sans leading-relaxed">
+                            "{fb.original_text}"
+                          </p>
+                          <div className="text-[10px] font-mono text-zinc-500 pt-1 flex items-center justify-between border-t border-zinc-900">
+                            <span>Device: {fb.meta_info?.device || 'Android'}</span>
+                            <span>Category: Payment</span>
+                          </div>
                         </div>
-                        <p className="text-xs text-zinc-300 italic">
-                          "{fb.original_text}"
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
 
-                {/* 2. Root Cause & Analytics */}
+                {/* 2. Root Cause Tab */}
                 {activeTab === 'root_cause' && (
                   <div className="space-y-6">
-                    <div>
-                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wide font-mono">Identified Root Cause</h4>
-                      <p className="text-sm text-zinc-300 mt-2 p-3 bg-zinc-950/30 border border-zinc-850 rounded-xl leading-relaxed">
-                        {issue.root_cause || 'AI is currently collecting reports to finalize root cause details.'}
-                      </p>
+                    <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20 glow-ai-card space-y-2">
+                      <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5" /> ✦ Possible Root Cause
+                      </h4>
+                      <p className="text-sm font-semibold text-white">Recent payment SDK update in version 12.5</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono pt-2">
+                        <div><span className="text-zinc-500 block">Confidence:</span> <strong className="text-indigo-400">92%</strong></div>
+                        <div><span className="text-zinc-500 block">Related Release:</span> <strong className="text-zinc-200">v12.5</strong></div>
+                        <div><span className="text-zinc-500 block">Platform:</span> <strong className="text-zinc-200">Android</strong></div>
+                        <div><span className="text-zinc-500 block">OS Version:</span> <strong className="text-zinc-200">Android 15</strong></div>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      
-                      {/* Device Distribution chart */}
-                      <div className="space-y-2">
-                        <span className="text-xs text-zinc-500 font-semibold uppercase flex items-center gap-1.5">
-                          <Smartphone className="w-3.5 h-3.5 text-indigo-400" /> Device Distribution
-                        </span>
-                        <div className="h-48">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={deviceData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                              <XAxis dataKey="name" stroke="#71717a" fontSize={10} />
-                              <YAxis stroke="#71717a" fontSize={10} />
-                              <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a' }} />
-                              <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* Country Distribution chart */}
-                      <div className="space-y-2">
-                        <span className="text-xs text-zinc-500 font-semibold uppercase flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-indigo-400" /> Country Distribution
-                        </span>
-                        <div className="h-48">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={countryData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={60}
-                                fill="#8884d8"
-                                dataKey="value"
-                                label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                              >
-                                {countryData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a' }} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
+                    <div className="h-48">
+                      <span className="text-xs text-zinc-400 font-semibold mb-2 block">Device Breakdown Chart</span>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={deviceData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                          <XAxis dataKey="name" stroke="#71717a" fontSize={11} />
+                          <YAxis stroke="#71717a" fontSize={11} />
+                          <Tooltip contentStyle={{ backgroundColor: '#0B0B0F', borderColor: '#27272a' }} />
+                          <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
                   </div>
                 )}
 
-                {/* 3. Business Impact */}
+                {/* 3. Business Impact Tab */}
                 {activeTab === 'impact' && (
-                  <div className="space-y-6">
-                    <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono">Financial Risk Assessment</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      
-                      <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-850 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center font-bold text-lg">
-                          <DollarSign className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wide">ARR at Risk</span>
-                          <span className="text-lg font-bold text-zinc-200 block mt-0.5">
-                            ${issue.estimated_revenue_risk.toLocaleString()}
-                          </span>
-                        </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider font-mono">Business Impact Analysis</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-4 rounded-xl bg-[#050505] border border-zinc-800">
+                        <span className="text-[10px] text-zinc-500 uppercase block font-semibold font-mono">Affected Customers</span>
+                        <span className="text-xl font-bold text-white mt-1 block">2,431</span>
                       </div>
-
-                      <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-850 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-orange-500/10 text-orange-400 flex items-center justify-center font-bold text-lg">
-                          <TrendingDown className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wide">Churn Risk</span>
-                          <span className="text-lg font-bold text-zinc-200 block mt-0.5">
-                            {(issue.estimated_churn_risk * 100).toFixed(0)}%
-                          </span>
-                        </div>
+                      <div className="p-4 rounded-xl bg-[#050505] border border-zinc-800">
+                        <span className="text-[10px] text-zinc-500 uppercase block font-semibold font-mono">Failed Orders</span>
+                        <span className="text-xl font-bold text-white mt-1 block">3,800</span>
                       </div>
-
-                      <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-850 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-400 flex items-center justify-center font-bold text-sm">
-                          CSAT
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-zinc-500 uppercase font-bold tracking-wide">Rating Delta</span>
-                          <span className="text-lg font-bold text-red-400 block mt-0.5">
-                            -2.8★ average
-                          </span>
-                        </div>
+                      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                        <span className="text-[10px] text-red-400 uppercase block font-bold font-mono">Revenue Risk</span>
+                        <span className="text-xl font-extrabold text-red-500 mt-1 block">HIGH ($42K)</span>
                       </div>
-
+                      <div className="p-4 rounded-xl bg-[#050505] border border-zinc-800">
+                        <span className="text-[10px] text-zinc-500 uppercase block font-semibold font-mono">Rating Impact</span>
+                        <span className="text-xl font-bold text-red-400 mt-1 block">-0.3 ★</span>
+                      </div>
                     </div>
-                    
-                    <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-950/20 p-3 rounded-lg border border-zinc-850/60">
-                      <strong>AI Forecast:</strong> If left unresolved, this issue is predicted to trigger a 3% churn increase inside the 'Mobile App' subscription tier over the next 14 days, primarily affecting United States customers.
-                    </p>
                   </div>
                 )}
 
-                {/* 4. Timeline & Discussion Comments */}
+                {/* 4. Timeline Tab */}
                 {activeTab === 'timeline' && (
-                  <div className="space-y-6">
-                    
-                    {/* Visual Stepper Timeline */}
-                    <div className="space-y-4">
-                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wide font-mono">Resolution Pipeline Progress</h4>
-                      <div className="flex justify-between items-center bg-zinc-950/30 p-4 rounded-xl border border-zinc-850">
-                        {['Detection', 'Assignment', 'Fix', 'Verification', 'Closed'].map((stepName, idx) => {
-                          const steps = ['New', 'Assigned', 'In Progress', 'QA', 'Closed'];
-                          const currentIdx = steps.indexOf(issue.status);
-                          const isDone = currentIdx >= idx;
-                          return (
-                            <div key={stepName} className="flex flex-col items-center gap-1">
-                              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                                isDone ? 'bg-indigo-600 text-white' : 'border border-zinc-850 text-zinc-500'
-                              }`}>
-                                {isDone ? '✓' : idx + 1}
-                              </div>
-                              <span className="text-[10px] font-semibold text-zinc-400">{stepName}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider font-mono">Problem Progress Timeline</h3>
+                    <div className="space-y-3 relative border-l border-zinc-800 ml-3 pl-5">
+                      {timelineSteps.map((t, idx) => (
+                        <div key={idx} className="relative flex items-center justify-between text-xs">
+                          <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 absolute -left-[25px]" />
+                          <span className="font-semibold text-zinc-200">{t.text}</span>
+                          <span className="font-mono text-zinc-500 text-[10px]">{t.date}</span>
+                        </div>
+                      ))}
                     </div>
-
-                    {/* Discussion Comments Thread */}
-                    <div className="space-y-4 pt-4 border-t border-zinc-850">
-                      <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wide font-mono">Discussion Logs</h4>
-                      <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                        {issue.comments.length === 0 ? (
-                          <p className="text-xs text-zinc-500 italic">No internal comments logged yet.</p>
-                        ) : (
-                          issue.comments.map((comm) => (
-                            <div key={comm.id} className="p-3 bg-zinc-950/40 rounded-xl border border-zinc-850 flex gap-3">
-                              <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-850">
-                                <User className="w-3.5 h-3.5 text-zinc-400" />
-                              </div>
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-bold text-zinc-200">{comm.author_name}</span>
-                                  <span className="text-[9px] uppercase font-bold text-zinc-500 font-mono tracking-wider">{comm.author_role}</span>
-                                  <span className="text-[9px] text-zinc-600">{new Date(comm.created_at).toLocaleTimeString()}</span>
-                                </div>
-                                <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{comm.content}</p>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* Add comment form */}
-                      <form onSubmit={handlePostComment} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          className="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200"
-                          placeholder="Log an internal comment... (e.g. 'Deploying hotfix')"
-                        />
-                        <button type="submit" className="px-4 py-2 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition">
-                          Post <Send className="w-3.5 h-3.5" />
-                        </button>
-                      </form>
-                    </div>
-
                   </div>
                 )}
 
+                {/* 5. Release Verification Tab */}
+                {activeTab === 'verification' && (
+                  <div className="p-5 rounded-2xl bg-emerald-500/5 border border-emerald-500/30 space-y-3 glow-ai-card">
+                    <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                      <CheckCheck className="w-4 h-4 text-emerald-400" /> ✦ Release Verification (Version 12.6)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 text-xs font-mono pt-2">
+                      <div className="p-3 bg-[#050505] border border-zinc-800 rounded-xl">
+                        <span className="text-zinc-500 block">Before Fix:</span>
+                        <strong className="text-red-400 text-sm">2,431 reports/week</strong>
+                      </div>
+                      <div className="p-3 bg-[#050505] border border-zinc-800 rounded-xl">
+                        <span className="text-zinc-500 block">After Fix:</span>
+                        <strong className="text-emerald-400 text-sm">183 reports/week</strong>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-emerald-500/20">
+                      <span className="text-emerald-300 font-bold">92.5% improvement confirmed</span>
+                      <span className="text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/30">
+                        ✓ AI recommends closing this problem
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            {/* Similar Problems & Merge Option */}
+            <div className="glass-panel p-5 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] space-y-3">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono">Similar Problems Identified</h3>
+                <button 
+                  onClick={handleMergeProblems}
+                  className="px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-200 font-semibold transition flex items-center gap-1.5"
+                >
+                  <Split className="w-3.5 h-3.5 text-indigo-400" /> Merge Problems
+                </button>
+              </div>
+              <div className="space-y-2">
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800/80 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-zinc-200">Payment timeout</span>
+                  <span className="font-mono text-indigo-400 font-bold">87% similarity</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800/80 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-zinc-200">UPI confirmation failure</span>
+                  <span className="font-mono text-indigo-400 font-bold">82% similarity</span>
+                </div>
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800/80 flex justify-between items-center text-xs">
+                  <span className="font-semibold text-zinc-200">Order missing after payment</span>
+                  <span className="font-mono text-indigo-400 font-bold">76% similarity</span>
+                </div>
               </div>
             </div>
 
           </div>
 
-          {/* Right Column: Widgets */}
+          {/* Right Column: AI Recommendations & Integration Widgets */}
           <div className="space-y-6">
             
-            {/* AI Recommendation & Assignment */}
-            <div className="glass-panel p-5 rounded-2xl border-indigo-500/10">
-              <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-1.5 font-mono uppercase tracking-wider mb-4">
-                <Sparkles className="w-4 h-4" /> AI Recommendation
+            {/* AI Recommendation Widget */}
+            <div className="glass-panel p-5 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] glow-ai-card space-y-4">
+              <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" /> ✦ AI Recommendation
               </h3>
               
-              <div className="space-y-3.5 bg-zinc-950/40 p-4 rounded-xl border border-zinc-850">
-                <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Suggested Team</span>
-                  <span className="text-xs font-semibold text-indigo-400">{recommendation.team}</span>
+              <div className="space-y-2.5 text-xs font-mono bg-[#050505] p-3.5 rounded-xl border border-zinc-800">
+                <div className="flex justify-between border-b border-zinc-850 pb-1.5">
+                  <span className="text-zinc-500">Suggested Team</span>
+                  <strong className="text-indigo-400">{recommendation.team}</strong>
                 </div>
-                <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Priority</span>
-                  <span className="text-xs font-bold text-red-400">{recommendation.priority}</span>
+                <div className="flex justify-between border-b border-zinc-850 pb-1.5">
+                  <span className="text-zinc-500">Confidence</span>
+                  <strong className="text-emerald-400">97% confidence</strong>
                 </div>
-                <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Effort Rating</span>
-                  <span className="text-xs font-semibold text-zinc-300">{recommendation.effort}</span>
+                <div className="flex justify-between border-b border-zinc-850 pb-1.5">
+                  <span className="text-zinc-500">Target Sprint</span>
+                  <strong className="text-zinc-200">{recommendation.sprint}</strong>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Fix Estimate</span>
-                  <span className="text-xs font-semibold text-zinc-300">{recommendation.fix_time}</span>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Estimated Due</span>
+                  <strong className="text-amber-400">{recommendation.fix_time}</strong>
                 </div>
               </div>
 
-              <div className="text-xs text-zinc-400 leading-relaxed italic bg-indigo-500/5 p-3 rounded-lg border border-indigo-500/10 mt-3">
-                "<strong>Reason:</strong> {recommendation.reason}"
-              </div>
+              <p className="text-xs text-zinc-300 italic bg-indigo-500/5 p-3 rounded-xl border border-indigo-500/15 leading-relaxed">
+                "{recommendation.reason}"
+              </p>
 
-              {/* Action: Quick Assign */}
-              <div className="mt-4 pt-4 border-t border-zinc-800/50 space-y-3">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Assign Team</label>
-                  <select
-                    value={assignTeam}
-                    onChange={(e) => setAssignTeam(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Engineering">Engineering</option>
-                    <option value="Support">Support</option>
-                    <option value="Payments Engineering">Payments Engineering</option>
-                    <option value="Auth Team">Auth Team</option>
-                    <option value="Platform Engineering">Platform Engineering</option>
-                    <option value="Product">Product</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Assign Employee</label>
-                  <select
-                    value={assignEmployee}
-                    onChange={(e) => setAssignEmployee(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 rounded-lg p-2 focus:outline-none focus:border-indigo-500"
-                  >
-                    <option value="Rahul Sharma">Rahul Sharma (Product Manager)</option>
-                    <option value="Kyle Reese">Kyle Reese (Developer)</option>
-                    <option value="Marcus Wright">Marcus Wright (Engineering Manager)</option>
-                    <option value="Dani Ramos">Dani Ramos (Support Lead)</option>
-                  </select>
-                </div>
-
-                <button 
-                  onClick={handleAssignSubmit}
-                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow transition"
-                >
-                  Assign Ticket
-                </button>
-              </div>
-
+              <button 
+                onClick={() => setAssignModalOpen(true)}
+                className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition"
+              >
+                Assign Problem
+              </button>
             </div>
 
-            {/* Engineering Integration Panel */}
-            <div className="glass-panel p-5 rounded-2xl">
-              <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono mb-4">Engineering Integrations</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <button 
-                  onClick={() => createIntegrationTicket('Jira')}
-                  className="p-3 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700/85 rounded-xl text-left flex flex-col justify-between h-20 transition"
-                >
-                  <span className="text-xs font-bold text-zinc-300">Jira Ticket</span>
-                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider font-mono">Push Card</span>
-                </button>
-                <button 
-                  onClick={() => createIntegrationTicket('GitHub')}
-                  className="p-3 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700/85 rounded-xl text-left flex flex-col justify-between h-20 transition"
-                >
-                  <span className="text-xs font-bold text-zinc-300">GitHub Issue</span>
-                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider font-mono">Open Bug</span>
-                </button>
-                <button 
-                  onClick={() => createIntegrationTicket('Linear')}
-                  className="p-3 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700/85 rounded-xl text-left flex flex-col justify-between h-20 transition"
-                >
-                  <span className="text-xs font-bold text-zinc-300">Linear Issue</span>
-                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider font-mono">File Card</span>
-                </button>
-                <button 
-                  onClick={() => createIntegrationTicket('Trello')}
-                  className="p-3 bg-zinc-950/40 border border-zinc-800 hover:border-zinc-700/85 rounded-xl text-left flex flex-col justify-between h-20 transition"
-                >
-                  <span className="text-xs font-bold text-zinc-300">Trello Card</span>
-                  <span className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider font-mono">Create Card</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Sidebar AI Chat */}
-            <div className="glass-panel rounded-2xl flex flex-col h-[320px] overflow-hidden border border-zinc-800">
-              <div className="px-4 py-3 bg-zinc-900/40 border-b border-zinc-800 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-xs font-bold text-zinc-300 font-mono uppercase tracking-wider">AI Issue Assistant</span>
-              </div>
-              
-              {/* Message log */}
-              <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                {chatHistory.map((ch, idx) => (
-                  <div key={idx} className={`p-2.5 rounded-xl text-xs max-w-[85%] ${
-                    ch.role === 'user' 
-                      ? 'bg-indigo-600/10 border border-indigo-500/20 text-indigo-200 ml-auto' 
-                      : 'bg-zinc-950/50 border border-zinc-900 text-zinc-400 mr-auto'
-                  }`}>
-                    {ch.text}
-                  </div>
-                ))}
-              </div>
-
-              {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="p-3 border-t border-zinc-800 flex gap-1.5 bg-zinc-950/30">
-                <input
-                  type="text"
-                  value={chatText}
-                  onChange={(e) => setChatText(e.target.value)}
-                  className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-indigo-500 text-zinc-200"
-                  placeholder="Ask a question about this bug..."
-                />
-                <button type="submit" className="p-1.5 bg-indigo-600 text-white rounded-lg flex items-center justify-center transition">
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </form>
+            {/* Jira Integration Box */}
+            <div className="glass-panel p-5 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] space-y-3">
+              <h3 className="text-xs font-bold text-zinc-300 uppercase tracking-wider font-mono flex items-center justify-between">
+                <span>Engineering Integration</span>
+                <span className="text-[10px] text-emerald-400 font-bold">● Jira Connected</span>
+              </h3>
+              <p className="text-xs text-zinc-400">
+                Create and synchronize engineering issues directly from EchoOps.
+              </p>
+              <button
+                onClick={() => setJiraModalOpen(true)}
+                className="w-full py-2.5 rounded-xl bg-[#050505] border border-zinc-800 hover:border-indigo-500/40 text-xs font-bold text-zinc-200 flex items-center justify-center gap-2 transition"
+              >
+                <GitBranch className="w-4 h-4 text-indigo-400" /> Create Jira Issue
+              </button>
             </div>
 
           </div>
@@ -816,6 +612,71 @@ export default function IssueDetailPage() {
         </div>
 
       </div>
+
+      {/* Jira Create Ticket Modal */}
+      {jiraModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-lg bg-[#0B0B0F] border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-white font-heading">Create Jira Issue</h3>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Project</label>
+                <select className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                  <option value="PAY">PAY (Payments Engine)</option>
+                  <option value="MOBILE">MOBILE (Mobile App)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Title</label>
+                <input type="text" defaultValue={issue.title} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200" />
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Priority</label>
+                <select className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                  <option value="Highest">Highest</option>
+                  <option value="High">High</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Assignee</label>
+                <input type="text" defaultValue="Rahul Sharma" className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setJiraModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 text-xs rounded-xl">Cancel</button>
+              <button onClick={handleCreateJiraTicket} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">Create Jira Issue</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assign Problem Modal */}
+      {assignModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-[#0B0B0F] border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl">
+            <h3 className="text-base font-bold text-white font-heading">Assign Problem</h3>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Team</label>
+                <select value={assignTeam} onChange={(e) => setAssignTeam(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                  <option value="Payments Engineering">Payments Engineering</option>
+                  <option value="Support">Support</option>
+                  <option value="Logistics">Logistics</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Assignee</label>
+                <input type="text" value={assignEmployee} onChange={(e) => setAssignEmployee(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setAssignModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 text-xs rounded-xl">Cancel</button>
+              <button onClick={handleAssignSubmit} className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow">Confirm Assignment</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </SidebarLayout>
   );
 }

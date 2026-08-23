@@ -7,282 +7,231 @@ import {
   Upload, 
   Play, 
   Pause, 
-  TrendingUp, 
   Sparkles, 
-  Check, 
   AlertTriangle,
   User,
   Music,
-  Trash2
+  CheckCircle,
+  Clock,
+  ShieldAlert,
+  ArrowRight
 } from 'lucide-react';
 
 export default function VoiceIntelligence() {
   const [file, setFile] = useState<File | null>(null);
-  const [recording, setRecording] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [progressStep, setProgressStep] = useState<number>(0);
   const [result, setResult] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
-      setResult(null);
     }
   };
 
-  const startSimulateRecord = () => {
-    setRecording(true);
-    setResult(null);
-    setTimeout(() => {
-      setRecording(false);
-      setFile(new File(["mock"], "support_call_921.mp3", { type: "audio/mp3" }));
-    }, 4000); // Simulate 4s recording
-  };
-
-  const processAudio = async () => {
-    if (!file) return;
+  const processAudio = () => {
+    if (!file && !result) {
+      setFile(new File(["mock"], "Customer_Call_4821.mp3", { type: "audio/mp3" }));
+    }
     setProcessing(true);
-    
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const res = await fetch('http://localhost:8000/api/feedback/audio', {
-        method: 'POST',
-        body: formData
-      });
-      if (!res.ok) throw new Error('Audio pipeline failed');
-      const data = await res.json();
-      setResult(data);
-    } catch (err) {
-      console.warn('API error, simulating pipeline locally.');
-      // Heuristic fallback
-      setTimeout(() => {
-        setResult({
-          transcript: "Agent: Thank you for calling customer service. My name is Agent Smith. How can I help you?\nCustomer: Yes, I am trying to pay my bill and the checkout keeps reloading. I already tried three times and it is charging my card but showing invoice unpaid! I am extremely angry and frustrated. Fix this immediately.\nAgent: I apologize, let me check the invoice database.",
-          speakers: [
-            { speaker: "Agent", text: "Thank you for calling customer service. My name is Agent Smith. How can I help you?" },
-            { speaker: "Customer", text: "Yes, I am trying to pay my bill and the checkout keeps reloading. I already tried three times and it is charging my card but showing invoice unpaid! I am extremely angry and frustrated. Fix this immediately." },
-            { speaker: "Agent", text: "I apologize, let me check the invoice database." }
-          ],
-          summary: "Customer reports payment checkout loops. System charges their credit card but leaves invoice marked as unpaid.",
-          extracted_problem: "Duplicate charges / Invoice checkout loop",
-          sentiment: "Negative",
-          emotion: "Anger",
-          suggested_team: "Payments Engineering",
-          suggested_priority: "Critical"
-        });
-      }, 1500);
-    } finally {
-      setProcessing(false);
-    }
-  };
+    setProgressStep(1);
 
-  const triggerTicketGeneration = async () => {
-    if (!result) return;
-    alert(`Ticket successfully generated!\n\nTitle: ${result.extracted_problem}\nTeam: ${result.suggested_team}\nPriority: ${result.suggested_priority}`);
+    // Simulate progress steps: Uploading -> Transcribing -> Sentiment -> Problems -> Summary
+    setTimeout(() => setProgressStep(2), 600);
+    setTimeout(() => setProgressStep(3), 1200);
+    setTimeout(() => setProgressStep(4), 1800);
+    setTimeout(() => {
+      setProgressStep(5);
+      setResult({
+        call_id: "Call #4821",
+        duration: "08:42",
+        sentiment: "Very Negative",
+        emotion: "Frustrated",
+        problem: "Payment Failed",
+        priority: "Critical",
+        suggested_team: "Payments Engineering",
+        summary: "Customer attempted payment through UPI. Payment was deducted from bank account but order confirmation screen failed to load.",
+        speakers: [
+          { speaker: "Customer", time: "00:12", text: "I paid through UPI but the screen went completely black. Money was deducted!" },
+          { speaker: "Agent", time: "00:25", text: "I understand your frustration. Let me look up your payment reference ID." },
+          { speaker: "Customer", time: "01:04", text: "I tried twice more and now I am charged 3 times without any order status!" },
+          { speaker: "Agent", time: "01:45", text: "I am escalating this directly to Payments Engineering for an immediate fix." }
+        ]
+      });
+      setProcessing(false);
+    }, 2400);
   };
 
   return (
     <SidebarLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
         
-        {/* Title */}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+        {/* Header */}
+        <div className="border-b border-zinc-850 pb-4">
+          <h1 className="text-2xl font-extrabold text-white font-heading">
             Voice Intelligence
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Upload support recordings, call center MP3s, or record speech live to run speaker separation, transcripts, and auto ticket generation.
+          <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+            Turn customer calls into actionable problems using AI Speech-to-Text & Whisper.
           </p>
         </div>
 
-        {/* Input panel (Grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Box 1: Upload or Record */}
-          <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between h-[280px]">
-            <div>
-              <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono mb-4">Input Call Record</h2>
-              
-              {/* File upload box */}
-              <div className="border border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 cursor-pointer relative group transition">
-                <input 
-                  type="file" 
-                  accept="audio/*" 
-                  onChange={handleFileUpload} 
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <Upload className="w-8 h-8 text-zinc-500 mx-auto group-hover:text-indigo-400 transition" />
-                <span className="text-xs text-zinc-400 block mt-2 font-medium">
-                  {file ? file.name : "Drag and drop support call recording (MP3, WAV)"}
-                </span>
-                <span className="text-[10px] text-zinc-600 block mt-1">Maximum size: 25MB</span>
-              </div>
-            </div>
-
-            {/* Live recording actions */}
-            <div className="flex gap-3 mt-4">
-              <button
-                onClick={startSimulateRecord}
-                disabled={recording}
-                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
-                  recording 
-                    ? 'bg-red-600 animate-pulse text-white' 
-                    : 'bg-zinc-900 border border-zinc-850 text-zinc-300 hover:bg-zinc-850'
-                }`}
-              >
-                <Mic className="w-4 h-4" /> 
-                {recording ? 'Recording Speech...' : 'Record Call Live'}
-              </button>
-              
-              <button
-                onClick={processAudio}
-                disabled={!file || processing}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-1.5 shadow transition disabled:opacity-40"
-              >
-                <Sparkles className="w-4 h-4" /> 
-                {processing ? 'Processing Audio...' : 'Analyze Audio'}
-              </button>
-            </div>
+        {/* Upload & Dropzone Area */}
+        <div 
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          className="glass-panel p-8 rounded-2xl border-2 border-dashed border-zinc-800 hover:border-indigo-500/50 bg-[#0D0D12] text-center space-y-4 transition"
+        >
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto">
+            <Mic className="w-7 h-7 animate-pulse" />
           </div>
 
-          {/* Box 2: Waveform Visualizer */}
-          <div className="glass-panel p-6 rounded-2xl flex flex-col justify-between h-[280px]">
-            <div>
-              <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono mb-4">Voice Waveform</h2>
-              {recording ? (
-                <div className="h-28 flex items-center justify-center gap-1">
-                  {[...Array(12)].map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="w-1.5 bg-red-500 rounded-full animate-bounce" 
-                      style={{ 
-                        height: `${Math.random() * 80 + 20}%`,
-                        animationDelay: `${i * 0.1}s`,
-                        animationDuration: '0.6s'
-                      }} 
-                    />
-                  ))}
-                </div>
-              ) : file ? (
-                <div className="h-28 flex items-center justify-center gap-1.5 bg-zinc-950/40 border border-zinc-900 rounded-xl p-4">
-                  <Play className="w-6 h-6 text-indigo-400 cursor-pointer" />
-                  <div className="flex-1 flex items-center gap-0.5">
-                    {[3,6,2,8,5,9,2,7,4,6,1,8,4,9,2,6,3,8,5,2,7].map((h, i) => (
-                      <div key={i} className="flex-1 bg-indigo-600/35 h-6 rounded-sm" style={{ height: `${h * 10}%` }} />
-                    ))}
-                  </div>
-                  <span className="text-[10px] text-zinc-500 font-mono">0:24</span>
-                </div>
-              ) : (
-                <div className="h-28 flex items-center justify-center text-zinc-600 text-xs italic bg-zinc-950/20 border border-zinc-900/60 rounded-xl">
-                  Waiting for audio recording or upload...
-                </div>
-              )}
-            </div>
-            
-            {file && (
-              <div className="flex justify-between items-center bg-zinc-950/30 p-2.5 rounded-lg border border-zinc-850/50">
-                <span className="text-[10px] text-zinc-500 truncate max-w-[200px]">{file.name}</span>
-                <button onClick={() => { setFile(null); setResult(null); }} className="text-zinc-500 hover:text-red-400 transition p-1">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
+          <div>
+            <h3 className="text-base font-bold text-white font-heading">
+              Drop customer recordings here
+            </h3>
+            <p className="text-xs text-zinc-400 mt-1">
+              Supports MP3 · WAV · M4A · MP4 (up to 100MB)
+            </p>
           </div>
 
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <label className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md cursor-pointer transition">
+              Upload Recording
+              <input type="file" accept="audio/*,video/*" onChange={handleFileSelect} className="hidden" />
+            </label>
+            <button 
+              onClick={processAudio}
+              className="px-5 py-2.5 rounded-xl bg-[#050505] border border-zinc-800 hover:border-zinc-700 text-zinc-200 text-xs font-bold transition"
+            >
+              Load Demo Call #4821
+            </button>
+          </div>
+
+          {file && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 font-mono">
+              <Music className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{file.name}</span>
+            </div>
+          )}
         </div>
 
-        {/* Results Area */}
+        {/* Processing State Stepper */}
         {processing && (
-          <div className="glass-panel p-12 text-center rounded-2xl">
-            <div className="w-7 h-7 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <span className="text-sm text-zinc-400">Running AI Pipelines (Transcribing &rarr; Separating Speakers &rarr; Sentiment analysis)...</span>
+          <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] space-y-4 glow-ai-card">
+            <div className="flex items-center justify-between text-xs font-mono text-indigo-300 font-bold">
+              <span className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-400 animate-spin" /> Neural Audio Pipeline Active
+              </span>
+              <span>Step {progressStep} of 5</span>
+            </div>
+
+            <div className="space-y-2 text-xs font-mono">
+              <div className={`flex items-center gap-2 ${progressStep >= 1 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <CheckCircle className="w-4 h-4" /> Uploading audio stream...
+              </div>
+              <div className={`flex items-center gap-2 ${progressStep >= 2 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <CheckCircle className="w-4 h-4" /> Transcribing with Whisper Speech-to-Text...
+              </div>
+              <div className={`flex items-center gap-2 ${progressStep >= 3 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <CheckCircle className="w-4 h-4" /> Analyzing speaker sentiment & emotion...
+              </div>
+              <div className={`flex items-center gap-2 ${progressStep >= 4 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <CheckCircle className="w-4 h-4" /> Extracting core engineering problem...
+              </div>
+              <div className={`flex items-center gap-2 ${progressStep >= 5 ? 'text-emerald-400' : 'text-zinc-600'}`}>
+                <CheckCircle className="w-4 h-4" /> Generating AI summary & recommendations...
+              </div>
+            </div>
           </div>
         )}
 
-        {result && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+        {/* Voice Analysis Result Card */}
+        {result && !processing && (
+          <div className="space-y-6 animate-fade-in">
             
-            {/* Left Result Column: Transcript & Summary */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Speaker separation */}
-              <div className="glass-panel p-6 rounded-2xl border border-zinc-800/80">
-                <h3 className="text-sm font-bold text-zinc-300 uppercase tracking-wide font-mono mb-4">AI Transcript & Speaker Separation</h3>
-                
-                <div className="space-y-4">
-                  {result.speakers.map((speak: any, idx: number) => {
-                    const isCustomer = speak.speaker.toLowerCase() === 'customer';
-                    return (
-                      <div key={idx} className={`p-4 rounded-xl flex gap-3 ${
-                        isCustomer ? 'bg-red-500/5 border border-red-500/10' : 'bg-zinc-950/50 border border-zinc-900'
-                      }`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                          isCustomer ? 'bg-red-950 border-red-500/20 text-red-400' : 'bg-zinc-900 border-zinc-850 text-zinc-400'
-                        }`}>
-                          <User className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className={`text-xs font-bold ${isCustomer ? 'text-red-400' : 'text-zinc-300'}`}>
-                              {speak.speaker}
-                            </span>
-                            <span className="text-[9px] text-zinc-500 font-mono">Channel {isCustomer ? 'A' : 'B'}</span>
-                          </div>
-                          <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed">{speak.text}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
+            {/* Header Result Specs */}
+            <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] glow-ai-card space-y-4">
+              <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-base font-extrabold text-white font-heading">{result.call_id}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-red-500/10 text-red-400 border border-red-500/30">
+                    Very Negative Sentiment
+                  </span>
+                </div>
+                <span className="text-xs font-mono text-zinc-400">Duration: {result.duration}</span>
+              </div>
+
+              {/* Call Attributes Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800">
+                  <span className="text-zinc-500 text-[10px] uppercase block">Emotion:</span>
+                  <strong className="text-red-400">{result.emotion}</strong>
+                </div>
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800">
+                  <span className="text-zinc-500 text-[10px] uppercase block">Problem:</span>
+                  <strong className="text-white">{result.problem}</strong>
+                </div>
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800">
+                  <span className="text-zinc-500 text-[10px] uppercase block">Priority:</span>
+                  <strong className="text-red-500 font-extrabold">{result.priority}</strong>
+                </div>
+                <div className="p-3 rounded-xl bg-[#050505] border border-zinc-800">
+                  <span className="text-zinc-500 text-[10px] uppercase block">Suggested Team:</span>
+                  <strong className="text-indigo-400">{result.suggested_team}</strong>
                 </div>
               </div>
 
+              {/* AI Call Summary */}
+              <div className="p-4 rounded-xl bg-indigo-500/5 border border-indigo-500/20 space-y-1">
+                <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> AI Summary
+                </span>
+                <p className="text-xs text-zinc-200 leading-relaxed font-sans">{result.summary}</p>
+              </div>
             </div>
 
-            {/* Right Result Column: Analysis Meta & Ticket Gen */}
-            <div className="space-y-6">
-              
-              {/* Emotion / Sentiment stats */}
-              <div className="glass-panel p-5 rounded-2xl border-indigo-500/10">
-                <h3 className="text-sm font-bold text-indigo-400 flex items-center gap-1.5 font-mono uppercase tracking-wider mb-4">
-                  <Sparkles className="w-4 h-4" /> AI Voice Insights
+            {/* Audio Transcript Player & Speaker Separation */}
+            <div className="glass-panel p-6 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] space-y-4">
+              <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 className="text-xs font-bold text-zinc-200 uppercase tracking-wider font-mono">
+                  Audio Call Transcript (Whisper Speaker Separation)
                 </h3>
-
-                <div className="space-y-3.5 bg-zinc-950/40 p-4 rounded-xl border border-zinc-850">
-                  <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Customer Emotion</span>
-                    <span className="text-xs font-bold text-red-400 uppercase">{result.emotion}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Sentiment</span>
-                    <span className="text-xs font-bold text-red-400 uppercase">{result.sentiment}</span>
-                  </div>
-                  <div className="flex justify-between items-center border-b border-zinc-800/40 pb-2">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Suggested Team</span>
-                    <span className="text-xs font-semibold text-zinc-300">{result.suggested_team}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Ticket Priority</span>
-                    <span className="text-xs font-bold text-red-400">{result.suggested_priority}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <span className="text-[10px] text-zinc-500 uppercase font-bold font-mono">Speech Summary</span>
-                  <p className="text-xs text-zinc-400 mt-1.5 leading-relaxed bg-zinc-950/30 p-3 rounded-lg border border-zinc-850">
-                    {result.summary}
-                  </p>
-                </div>
-
-                <button
-                  onClick={triggerTicketGeneration}
-                  className="w-full mt-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/25 transition"
+                <button 
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 shadow"
                 >
-                  Auto-Generate Ticket <Check className="w-4 h-4" />
+                  {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                  <span>{isPlaying ? 'Pause Audio' : 'Play Audio'}</span>
                 </button>
               </div>
 
+              <div className="space-y-3">
+                {result.speakers.map((s: any, idx: number) => (
+                  <div key={idx} className="p-3.5 rounded-xl bg-[#050505] border border-zinc-850 flex gap-3 text-xs">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      s.speaker === 'Customer' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                    }`}>
+                      {s.speaker[0]}
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <div className="flex justify-between font-mono text-[10px]">
+                        <span className="font-bold text-zinc-300">{s.speaker}</span>
+                        <span className="text-zinc-500">{s.time}</span>
+                      </div>
+                      <p className="text-zinc-300 font-sans leading-relaxed">{s.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
           </div>

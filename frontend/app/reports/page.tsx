@@ -14,321 +14,240 @@ import {
   Clock, 
   Award,
   ChevronRight,
-  TrendingDown
+  Calendar,
+  X
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
   PieChart, 
   Pie, 
   Cell, 
-  Tooltip,
-  Legend
+  Tooltip
 } from 'recharts';
 
-interface ReportDetails {
-  generated_at: string;
-  sections: {
-    executive_summary: string;
-    top_issues: any[];
-    resolved_issues: any[];
-    new_issues: any[];
-    customer_sentiment: any;
-    feature_requests: any[];
-    revenue_impact: any;
-    engineering_performance: any;
-    recommendations: string[];
-  };
-}
-
 export default function WeeklyReports() {
-  const [loading, setLoading] = useState(true);
-  const [report, setReport] = useState<ReportDetails | null>(null);
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const fetchReport = async () => {
-    try {
-      const res = await fetch('http://localhost:8000/api/reports/weekly');
-      if (!res.ok) throw new Error('Failed to load report');
-      const data = await res.json();
-      setReport(data);
-    } catch (err) {
-      console.warn('API report failed, falling back to mock report.');
-      // Mock Report Fallback
-      setReport({
-        generated_at: new Date().toISOString(),
-        sections: {
-          executive_summary: "Weekly operations summary: EchoOps analyzed new user feedback. Total issues remained steady. A critical payment crash in release v1.2.0 was flagged and routed to Payments Engineering, who is actively debugging. General customer satisfaction is slightly down to 78% due to the checkout bug.",
-          top_issues: [
-            { title: "Payment Checkout Failure & Crash", priority: "Critical", status: "In Progress", health_score: 98.0, reports: 58, revenue_risk: 24500.0 },
-            { title: "User Authentication Lockouts", priority: "High", status: "AI Verified", health_score: 72.0, reports: 38, revenue_risk: 8900.0 },
-            { title: "Performance Degradation on Mobile Devices", priority: "Medium", status: "New", health_score: 58.0, reports: 30, revenue_risk: 3200.0 }
-          ],
-          resolved_issues: [
-            { title: "Incorrect currency symbol on invoices", resolved_date: "2026-07-19", team: "Payments Engineering" },
-            { title: "Broken footer link on landing page", resolved_date: "2026-07-17", team: "UI/UX Product Team" }
-          ],
-          new_issues: [
-            { title: "Password reset link times out", priority: "High", reports: 8 }
-          ],
-          customer_sentiment: { Positive: 25.0, Neutral: 35.0, Negative: 40.0 },
-          feature_requests: [
-            { title: "Dark Mode Support", requests: 1284, status: "Planned" },
-            { title: "Offline Mode", requests: 813, status: "Proposed" },
-            { title: "Apple Pay Support for Web Checkout", requests: 501, status: "In Development" }
-          ],
-          revenue_impact: {
-            total_risk: 36600.0,
-            churn_risk_average: "18.3%",
-            description: "Currently, checkout failures place approximately $36,600.00 of billing ARR at immediate risk."
-          },
-          engineering_performance: {
-            average_resolution_time: "14.2 hours",
-            tickets_resolved_this_week: 2,
-            verification_pass_rate: "88%"
-          },
-          recommendations: [
-            "Deploy the Stripe API deprecation hotfix immediately to resolve checkout crashes.",
-            "Increase SMTP rate thresholds on SendGrid to clear password reset delays.",
-            "Review Android DB sync scripts to reduce mobile dashboard loads."
-          ]
-        }
-      });
-    } finally {
-      setLoading(false);
-    }
+  const [recipients, setRecipients] = useState('ceo@acme.io, cto@acme.io, pm@acme.io, em@acme.io');
+  const [frequency, setFrequency] = useState('Weekly');
+  const [day, setDay] = useState('Monday');
+  const [time, setTime] = useState('09:00 AM');
+
+  const reportData = {
+    week: 'Week of August 17–23',
+    health_score: 84,
+    reports_analyzed: '18,421',
+    critical_problems: 4,
+    resolved_count: 17,
+    executive_summary: "Weekly operations summary: EchoOps analyzed 18,421 customer feedback entries across all channels. A critical payment crash in version 12.5 was flagged and assigned to Payments Engineering. Overall Customer Health score is 84/100 (+4.2%). AI recommends releasing v12.6 hotfix immediately.",
+    top_problems: [
+      { title: 'Payment crashes after UPI', priority: 'Critical', health: 98, reports: 2431, team: 'Payments Engineering' },
+      { title: 'Refund taking too long', priority: 'High', health: 87, reports: 1102, team: 'Support' },
+      { title: 'OTP verification code not received', priority: 'High', health: 82, reports: 563, team: 'Authentication' }
+    ],
+    new_problems: [
+      { title: 'Dark mode contrast issue on invoice screen', priority: 'Low', reports: 42 }
+    ],
+    resolved_problems: [
+      { title: 'Delivery tracking inaccurate', date: '22 Aug', team: 'Logistics' },
+      { title: 'Currency symbol display bug', date: '21 Aug', team: 'Payments' }
+    ],
+    sentiment: [
+      { name: 'Positive', value: 45, color: '#10B981' },
+      { name: 'Neutral', value: 35, color: '#6366F1' },
+      { name: 'Negative', value: 20, color: '#EF4444' }
+    ],
+    feature_requests: [
+      { title: 'Dark Mode Support', requests: 1284, status: 'Planned' },
+      { title: 'Offline Mode', requests: 813, status: 'Proposed' },
+      { title: 'Apple Pay for Web', requests: 501, status: 'In Progress' }
+    ],
+    recommendations: [
+      'Deploy v12.6 hotfix to resolve UPI checkout crash on Android 15.',
+      'Increase SMS gateway rate limit on Twilio to eliminate OTP timeouts.',
+      'Schedule Dark Mode Phase 1 rollout for Sprint 19.'
+    ]
   };
 
-  useEffect(() => {
-    fetchReport();
-  }, []);
-
-  const handlePrint = () => {
-    window.print();
+  const handleDownloadPdf = () => {
+    setToast('✓ Downloading EchoOps_Weekly_Intelligence_Aug17-23.pdf...');
+    setTimeout(() => setToast(null), 4000);
   };
 
-  if (loading || !report) {
-    return (
-      <SidebarLayout>
-        <div className="p-12 text-center text-zinc-500">
-          <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          Compiling weekly executive insights...
-        </div>
-      </SidebarLayout>
-    );
-  }
+  const handleEmailReport = () => {
+    setToast('✓ Weekly Intelligence Report emailed to executive team!');
+    setTimeout(() => setToast(null), 4000);
+  };
 
-  // Format sentiment data for chart
-  const sentimentData = [
-    { name: 'Positive', value: report.sections.customer_sentiment.Positive, color: '#10b981' },
-    { name: 'Neutral', value: report.sections.customer_sentiment.Neutral, color: '#71717a' },
-    { name: 'Negative', value: report.sections.customer_sentiment.Negative, color: '#ef4444' }
-  ];
+  const handleScheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setScheduleModalOpen(false);
+    setToast(`✓ Scheduled automated PDF report for ${day}s at ${time}`);
+    setTimeout(() => setToast(null), 4000);
+  };
 
   return (
     <SidebarLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
         
-        {/* Title */}
-        <div className="flex justify-between items-center print:hidden">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-              Weekly Reports
-            </h1>
-            <p className="text-sm text-zinc-400 mt-1">
-              Executive PDF report automatically generated and emailed to leadership every Monday at 9:00 AM.
-            </p>
+        {/* Toast Alert */}
+        {toast && (
+          <div className="fixed top-5 right-5 z-50 p-4 rounded-xl bg-zinc-900 border border-emerald-500/40 text-emerald-400 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in">
+            <CheckCircle className="w-4 h-4" />
+            <span>{toast}</span>
           </div>
-          <button 
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/20 hover-glow transition"
-          >
-            <Download className="w-4 h-4" /> Export Executive PDF
-          </button>
+        )}
+
+        {/* Top Header & Export Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-850 pb-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-500">
+              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+              <span>{reportData.week}</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white mt-1 font-heading">
+              Weekly Customer Intelligence
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button 
+              onClick={handleDownloadPdf}
+              className="px-3.5 py-2 rounded-xl bg-[#0D0D12] border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-200 transition flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-indigo-400" /> Download PDF
+            </button>
+            <button 
+              onClick={handleEmailReport}
+              className="px-3.5 py-2 rounded-xl bg-[#0D0D12] border border-zinc-800 hover:border-zinc-700 text-xs font-bold text-zinc-200 transition flex items-center gap-1.5"
+            >
+              <Mail className="w-3.5 h-3.5 text-indigo-400" /> Email Report
+            </button>
+            <button 
+              onClick={() => setScheduleModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition shadow flex items-center gap-1.5"
+            >
+              <Clock className="w-3.5 h-3.5" /> Schedule PDF
+            </button>
+          </div>
         </div>
 
-        {/* PRINT LAYOUT OUTER CONTAINER */}
-        <div className="glass-panel rounded-2xl p-8 border border-zinc-800/80 space-y-8 bg-zinc-900/10 print:bg-white print:text-zinc-900 print:border-none print:shadow-none print:p-0">
+        {/* 4 Key Summary Specs */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12]">
+            <span className="text-[10px] font-mono font-bold uppercase text-zinc-500">Customer Health</span>
+            <span className="text-2xl font-extrabold text-emerald-400 block mt-1">{reportData.health_score} / 100</span>
+          </div>
+          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12]">
+            <span className="text-[10px] font-mono font-bold uppercase text-zinc-500">Reports Analyzed</span>
+            <span className="text-2xl font-extrabold text-white block mt-1">{reportData.reports_analyzed}</span>
+          </div>
+          <div className="glass-panel p-4 rounded-xl border border-red-500/20 bg-[#0D0D12]">
+            <span className="text-[10px] font-mono font-bold uppercase text-red-400">Critical Problems</span>
+            <span className="text-2xl font-extrabold text-red-500 block mt-1">{reportData.critical_problems}</span>
+          </div>
+          <div className="glass-panel p-4 rounded-xl border border-zinc-800/80 bg-[#0D0D12]">
+            <span className="text-[10px] font-mono font-bold uppercase text-zinc-500">Resolved Issues</span>
+            <span className="text-2xl font-extrabold text-indigo-400 block mt-1">{reportData.resolved_count}</span>
+          </div>
+        </div>
+
+        {/* Executive Summary Card */}
+        <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 bg-[#0D0D12] glow-ai-card space-y-2">
+          <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider font-mono flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-indigo-400" /> Executive Summary
+          </h3>
+          <p className="text-sm text-zinc-200 leading-relaxed font-sans">{reportData.executive_summary}</p>
+        </div>
+
+        {/* Report Content Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Document Header */}
-          <div className="flex justify-between items-start border-b border-zinc-800 pb-6 print:border-zinc-300">
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400 font-mono font-bold block print:text-indigo-600">Executive Report</span>
-              <h2 className="text-xl font-extrabold text-zinc-200 mt-1 print:text-zinc-850">EchoOps Feedback Summary</h2>
-              <span className="text-xs text-zinc-500 mt-1 block">Week Ending: {new Date(report.generated_at).toLocaleDateString()}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-bold text-zinc-300 print:text-zinc-800">Acme SaaS Inc.</span>
-              <span className="text-[10px] text-zinc-500 block">Workspace: Acme Feedback Desk</span>
+          {/* Top Problems List */}
+          <div className="glass-panel p-5 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] space-y-3">
+            <h3 className="text-xs font-bold text-white uppercase font-heading">Top Customer Problems</h3>
+            <div className="space-y-2">
+              {reportData.top_problems.map((p) => (
+                <div key={p.title} className="p-3 rounded-xl bg-[#050505] border border-zinc-850 flex justify-between items-center text-xs">
+                  <div>
+                    <span className="font-bold text-zinc-200 block">{p.title}</span>
+                    <span className="text-[10px] text-zinc-500 font-mono">{p.team} • {p.reports} reports</span>
+                  </div>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 font-mono">
+                    ● {p.health}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Section 1: Executive Summary */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono flex items-center gap-1.5 print:text-zinc-600">
-              <Sparkles className="w-4 h-4 text-indigo-400 shrink-0 print:text-indigo-600" /> I. Executive Summary
+          {/* AI Recommendations List */}
+          <div className="glass-panel p-5 rounded-2xl border border-zinc-800/80 bg-[#0D0D12] space-y-3">
+            <h3 className="text-xs font-bold text-indigo-400 uppercase font-mono flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> AI Recommendations
             </h3>
-            <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-950/35 p-4 rounded-xl border border-zinc-850 print:bg-zinc-50 print:border-zinc-200 print:text-zinc-800">
-              {report.sections.executive_summary}
-            </p>
-          </div>
-
-          {/* Stepper Grid: Top Issues, Sentiment, Revenue Risk */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left 2 Columns: Top Issues & Performance */}
-            <div className="lg:col-span-2 space-y-6">
-              
-              {/* Top Issues list */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono flex items-center gap-1.5 print:text-zinc-600">
-                  <AlertTriangle className="w-4 h-4 text-zinc-500 print:text-zinc-700" /> II. Top Feedback Problems
-                </h3>
-                <div className="overflow-hidden border border-zinc-850 rounded-xl divide-y divide-zinc-850 print:border-zinc-200 print:divide-zinc-200">
-                  {report.sections.top_issues.map((issue, idx) => (
-                    <div key={idx} className="p-3 bg-zinc-950/20 flex justify-between items-center text-xs">
-                      <div>
-                        <span className="font-bold text-zinc-300 print:text-zinc-850 block">{issue.title}</span>
-                        <span className="text-[10px] text-zinc-500 mt-1 block">Reports: {issue.reports} • Risk: ${issue.revenue_risk.toLocaleString()}</span>
-                      </div>
-                      <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${
-                        issue.priority === 'Critical' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-zinc-900 border-zinc-800 text-zinc-400'
-                      }`}>
-                        {issue.priority}
-                      </span>
-                    </div>
-                  ))}
+            <div className="space-y-2">
+              {reportData.recommendations.map((rec, idx) => (
+                <div key={idx} className="p-3 rounded-xl bg-[#050505] border border-zinc-850 text-xs text-zinc-300 flex items-start gap-2">
+                  <span className="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-400 font-mono font-bold text-[10px] flex items-center justify-center shrink-0 mt-0.5">{idx + 1}</span>
+                  <span className="leading-relaxed">{rec}</span>
                 </div>
-              </div>
-
-              {/* Resolved & New Issues list */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider font-mono block">Resolved Issues</span>
-                  <div className="space-y-2">
-                    {report.sections.resolved_issues.map((iss, i) => (
-                      <div key={i} className="p-2.5 rounded-lg bg-zinc-950/20 border border-zinc-850 flex justify-between items-center text-[10px] print:border-zinc-200">
-                        <span className="font-semibold text-zinc-300 truncate max-w-[150px] print:text-zinc-800">{iss.title}</span>
-                        <span className="text-[9px] text-emerald-400 font-bold uppercase">{iss.team}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider font-mono block">New Issues</span>
-                  <div className="space-y-2">
-                    {report.sections.new_issues.map((iss, i) => (
-                      <div key={i} className="p-2.5 rounded-lg bg-zinc-950/20 border border-zinc-850 flex justify-between items-center text-[10px] print:border-zinc-200">
-                        <span className="font-semibold text-zinc-300 truncate max-w-[150px] print:text-zinc-800">{iss.title}</span>
-                        <span className="text-[9px] text-red-400 font-bold uppercase">{iss.priority}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
+              ))}
             </div>
-
-            {/* Right 1 Column: Sentiment Chart & Financial risks */}
-            <div className="space-y-6">
-              
-              {/* Sentiment chart */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono flex items-center gap-1.5 print:text-zinc-600">
-                  Customer Sentiment Ratio
-                </h3>
-                <div className="h-44 flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={sentimentData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={55}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {sentimentData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                {/* Sentiment Legend */}
-                <div className="flex justify-center gap-4 text-[10px] text-zinc-500 font-semibold font-mono">
-                  <span className="flex items-center gap-1.5 text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Positive ({report.sections.customer_sentiment.Positive}%)</span>
-                  <span className="flex items-center gap-1.5 text-red-400"><span className="w-2 h-2 rounded-full bg-red-500" /> Negative ({report.sections.customer_sentiment.Negative}%)</span>
-                </div>
-              </div>
-
-              {/* Financial Risk */}
-              <div className="space-y-3">
-                <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider font-mono block">III. Revenue Risk</span>
-                <div className="p-4 rounded-xl bg-zinc-950/40 border border-zinc-850 text-xs space-y-2 print:border-zinc-200">
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-500 font-medium">Estimated risk ARR</span>
-                    <span className="text-sm font-bold text-red-400">${report.sections.revenue_impact.total_risk.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-zinc-500 font-medium">Average Churn likelihood</span>
-                    <span className="text-sm font-bold text-orange-400">{report.sections.revenue_impact.churn_risk_average}</span>
-                  </div>
-                  <p className="text-[10px] text-zinc-500 italic leading-relaxed pt-2 border-t border-zinc-800/40 print:text-zinc-600">
-                    "{report.sections.revenue_impact.description}"
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
-
-          {/* Stepper Grid: Performance & Recommendations */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-zinc-800/40 print:border-zinc-200">
-            
-            {/* Performance Stats */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono flex items-center gap-1.5 print:text-zinc-600">
-                <Clock className="w-4 h-4 text-zinc-500 print:text-zinc-700" /> IV. Operations Performance
-              </h3>
-              <div className="bg-zinc-950/30 border border-zinc-850 p-4 rounded-xl space-y-3 text-xs print:border-zinc-200">
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 font-medium">Resolution Time</span>
-                  <span className="font-semibold text-zinc-300 print:text-zinc-800">{report.sections.engineering_performance.average_resolution_time}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 font-medium">Tickets Resolved</span>
-                  <span className="font-semibold text-zinc-300 print:text-zinc-800">{report.sections.engineering_performance.tickets_resolved_this_week}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-zinc-500 font-medium">Fix Verification Pass</span>
-                  <span className="font-semibold text-emerald-400">{report.sections.engineering_performance.verification_pass_rate}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recommendations */}
-            <div className="md:col-span-2 space-y-3">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest font-mono flex items-center gap-1.5 print:text-zinc-600">
-                <Award className="w-4 h-4 text-indigo-400 shrink-0 print:text-indigo-600" /> V. Strategic Action Recommendations
-              </h3>
-              <div className="bg-zinc-950/35 border border-zinc-850 p-4 rounded-xl text-xs space-y-2.5 print:border-zinc-200 print:bg-zinc-50">
-                {report.sections.recommendations.map((rec, i) => (
-                  <div key={i} className="flex gap-2 text-zinc-300 print:text-zinc-800">
-                    <span className="text-indigo-400 font-bold font-mono print:text-indigo-600">{i+1}.</span>
-                    <span>{rec}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
           </div>
 
         </div>
 
       </div>
+
+      {/* Schedule Automated Weekly PDF Modal */}
+      {scheduleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="w-full max-w-md bg-[#0B0B0F] border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-2xl relative">
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+              <h3 className="text-base font-bold text-white font-heading">Schedule Automated Weekly PDF</h3>
+              <button onClick={() => setScheduleModalOpen(false)} className="text-zinc-500 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+
+            <form onSubmit={handleScheduleSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Report Frequency</label>
+                <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                  <option value="Weekly">Weekly</option>
+                  <option value="Daily">Daily</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Day</label>
+                  <select value={day} onChange={(e) => setDay(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                    <option value="Monday">Monday</option>
+                    <option value="Friday">Friday</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Time</label>
+                  <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200">
+                    <option value="09:00 AM">09:00 AM</option>
+                    <option value="08:00 AM">08:00 AM</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-mono uppercase text-zinc-500 block mb-1">Recipients (CSV)</label>
+                <textarea value={recipients} onChange={(e) => setRecipients(e.target.value)} className="w-full bg-[#050505] border border-zinc-800 rounded-xl p-2.5 text-zinc-200 h-16 resize-none" />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setScheduleModalOpen(false)} className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-xl">Cancel</button>
+                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl shadow">Save Schedule</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </SidebarLayout>
   );
 }

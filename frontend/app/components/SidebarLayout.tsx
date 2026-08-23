@@ -3,16 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import CommandPalette from './CommandPalette';
+import AIChatDrawer from './AIChatDrawer';
 import { 
   LayoutDashboard, 
-  Sparkles, 
-  Mic, 
+  CircleAlert, 
   MessageSquare, 
+  Mic, 
   Lightbulb, 
+  Sparkles, 
+  Users, 
+  Plug, 
   FileText, 
-  Layers, 
+  BarChart3, 
   Settings, 
-  Bell, 
+  HelpCircle,
   Search,
   ChevronDown,
   User,
@@ -20,7 +25,10 @@ import {
   Zap,
   LogOut,
   Menu,
-  X
+  X,
+  Bell,
+  Layers,
+  Bot
 } from 'lucide-react';
 
 const DynamicLogo = ({ imgUrl, label }: { imgUrl: string; label: string }) => {
@@ -29,11 +37,11 @@ const DynamicLogo = ({ imgUrl, label }: { imgUrl: string; label: string }) => {
   if (!label || label.trim() === "") return null;
 
   return (
-    <div className="flex items-center gap-2 bg-zinc-900/50 border border-zinc-800/80 px-3 py-1.5 rounded-xl transition duration-200">
-      <div className="w-5.5 h-5.5 rounded-md overflow-hidden flex items-center justify-center bg-zinc-850 border border-zinc-800 shrink-0">
+    <div className="flex items-center gap-2 bg-[#0D0D12] border border-zinc-800/80 px-2.5 py-1.5 rounded-xl transition">
+      <div className="w-5 h-5 rounded-md overflow-hidden flex items-center justify-center bg-zinc-900 border border-zinc-800 shrink-0">
         {error ? (
-          <div className="w-full h-full bg-gradient-to-tr from-zinc-800 to-zinc-700 flex items-center justify-center">
-            <span className="text-[10px] font-extrabold text-zinc-400 font-mono uppercase">
+          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
+            <span className="text-[9px] font-extrabold text-zinc-400 font-mono uppercase">
               {label.substring(0, 2)}
             </span>
           </div>
@@ -62,6 +70,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const router = useRouter();
   
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
+
   const [workspace, setWorkspace] = useState('Acme Workspace');
   const [userRole, setUserRole] = useState('Super Admin');
   const [userName, setUserName] = useState('Rahul Sharma');
@@ -70,17 +81,29 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([
-    { id: 1, type: 'critical', text: 'Critical issue detected: Payment checkout crashes', time: '5m ago', read: false },
+    { id: 1, type: 'critical', text: 'Critical problem: Payment crash after UPI', time: '5m ago', read: false },
     { id: 2, type: 'assignment', text: 'Stripe Bug assigned to Rahul Sharma', time: '1h ago', read: false },
     { id: 3, type: 'health', text: 'Health Index changed from 85 to 64', time: '3h ago', read: true }
   ]);
+
+  // Handle Cmd+K keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCmdPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Close mobile drawer on route change
   useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  // Sync role, workspace, and search query on load/navigation
+  // Sync auth state on load
   useEffect(() => {
     const loggedIn = localStorage.getItem('echoops_logged_in');
     if (!loggedIn && pathname !== '/login') {
@@ -106,11 +129,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const q = params.get('search');
-      if (q) {
-        setSearchQuery(q);
-      } else {
-        setSearchQuery('');
-      }
+      if (q) setSearchQuery(q);
     }
   }, [pathname]);
 
@@ -125,124 +144,156 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const handleRoleChange = (role: string) => {
     setUserRole(role);
     localStorage.setItem('echoops_role', role);
-    // Reload components depending on role permissions
     window.dispatchEvent(new Event('role-changed'));
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchQuery)}`);
-    } else {
-      router.push('/');
+  const navSections = [
+    {
+      title: 'Overview',
+      items: [
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+        { name: 'Problems', href: '/issues/1', icon: CircleAlert },
+        { name: 'Feedback', href: '/onboarding', icon: MessageSquare },
+        { name: 'Voice Intelligence', href: '/voice', icon: Mic },
+        { name: 'Feature Requests', href: '/features', icon: Lightbulb },
+        { name: 'AI Insights', href: '/chat', icon: Sparkles }
+      ]
+    },
+    {
+      title: 'Operations',
+      items: [
+        { name: 'Team Work', href: '/team', icon: Users },
+        { name: 'Integrations', href: '/integrations', icon: Plug }
+      ]
+    },
+    {
+      title: 'Reports',
+      items: [
+        { name: 'Weekly Reports', href: '/reports', icon: FileText }
+      ]
     }
-  };
-
-  const menuItems = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Onboarding Wizard', href: '/onboarding', icon: Sparkles },
-    { name: 'Voice Intelligence', href: '/voice', icon: Mic },
-    { name: 'AI Chat Copilot', href: '/chat', icon: MessageSquare },
-    { name: 'Feature Requests', href: '/features', icon: Lightbulb },
-    { name: 'Weekly Reports', href: '/reports', icon: FileText },
-    { name: 'Integrations', href: '/integrations', icon: Settings }
-  ];
-
-  const roles = [
-    'Super Admin', 'Admin', 'Product Manager', 
-    'Engineering Manager', 'Developer', 'Customer Support', 'Viewer'
   ];
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Breadcrumb formatting helper
+  const getPageTitle = () => {
+    if (pathname === '/') return 'Dashboard';
+    if (pathname.startsWith('/issues')) return 'Problem Detail';
+    if (pathname === '/voice') return 'Voice Intelligence';
+    if (pathname === '/chat') return 'AI Copilot Chat';
+    if (pathname === '/features') return 'Feature Requests';
+    if (pathname === '/reports') return 'Weekly Reports';
+    if (pathname === '/integrations') return 'Integrations & Jira';
+    if (pathname === '/team') return 'Team Workload';
+    if (pathname === '/onboarding') return 'Onboarding Wizard';
+    return 'EchoOps';
+  };
+
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950 text-zinc-100">
+    <div className="flex h-screen overflow-hidden bg-[#050505] text-zinc-100 font-sans">
       
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex w-64 bg-zinc-900/60 border-r border-zinc-800/80 flex-col backdrop-blur-xl z-20 shrink-0">
+      {/* Command Palette Modal */}
+      <CommandPalette isOpen={cmdPaletteOpen} onClose={() => setCmdPaletteOpen(false)} />
+      
+      {/* Top Nav AI Copilot Drawer */}
+      <AIChatDrawer isOpen={aiDrawerOpen} onClose={() => setAiDrawerOpen(false)} />
+
+      {/* Desktop 250px Sidebar */}
+      <aside className="hidden md:flex w-[250px] bg-[#080808] border-r border-zinc-800/70 flex-col z-20 shrink-0 select-none">
         
-        {/* Logo and Branding */}
-        <div className="p-5 border-b border-zinc-800/50 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-zinc-950 flex items-center justify-center p-1 border border-indigo-500/20 shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden">
-            <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">EchoOps</span>
-            <span className="text-[10px] block text-zinc-500 font-mono tracking-wider">FEEDBACK OS</span>
+        {/* Brand Header */}
+        <div className="p-4 border-b border-zinc-850 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => router.push('/')}>
+            <div className="w-8 h-8 rounded-xl bg-black border border-zinc-800 flex items-center justify-center p-1 shadow-md shadow-indigo-500/10 overflow-hidden">
+              <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <span className="font-extrabold text-base tracking-tight text-white font-heading">EchoOps</span>
+              <span className="text-[9px] block text-zinc-500 font-mono tracking-wider font-semibold">FEEDBACK OS</span>
+            </div>
           </div>
         </div>
 
-        {/* Workspace selector */}
-        <div className="px-4 py-3">
-          <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-950/40 border border-zinc-800/60 text-sm cursor-pointer hover:bg-zinc-900/40 transition">
+        {/* Workspace Selector */}
+        <div className="px-3 py-2.5 border-b border-zinc-850/60">
+          <div className="flex items-center justify-between p-2 rounded-lg bg-[#0D0D12] border border-zinc-800/60 text-xs cursor-pointer hover:bg-zinc-850 transition">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-indigo-400" />
-              <span className="font-medium truncate max-w-[130px]">{workspace}</span>
+              <Layers className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="font-medium truncate max-w-[130px] text-zinc-200">{workspace}</span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
           </div>
         </div>
 
-        {/* Menu Links */}
-        <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition duration-200 ${
-                  isActive 
-                    ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' 
-                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-400'}`} />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+        {/* Navigation Sections */}
+        <nav className="flex-1 px-2 py-3 space-y-5 overflow-y-auto">
+          {navSections.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <div className="px-3 text-[10px] uppercase font-mono font-bold text-zinc-500 tracking-wider mb-1">
+                {section.title}
+              </div>
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition duration-200 ${
+                      isActive 
+                        ? 'bg-zinc-800/60 text-white font-semibold border border-zinc-700/50 before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r-full before:bg-ai-gradient' 
+                        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900/60'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
-        {/* Role Simulator Selector */}
-        <div className="p-4 border-t border-zinc-800/50 bg-zinc-950/20">
-          <div className="text-[10px] uppercase font-bold text-zinc-500 mb-2 flex items-center gap-1.5 font-mono">
-            <ShieldCheck className="w-3 h-3 text-indigo-400" />
-            Simulate Role
-          </div>
-          <div className="relative">
-            <select
-              value={userRole}
-              onChange={(e) => handleRoleChange(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-lg p-2 pr-8 appearance-none focus:outline-none focus:border-indigo-500 cursor-pointer"
-            >
-              {roles.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-2.5 pointer-events-none" />
+        {/* Bottom Role Simulator & Profile */}
+        <div className="p-3 border-t border-zinc-850 bg-[#09090D] space-y-3">
+          <div className="space-y-1">
+            <div className="text-[9px] uppercase font-mono font-bold text-zinc-500 flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-indigo-400" />
+              Role Simulator
+            </div>
+            <div className="relative">
+              <select
+                value={userRole}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                className="w-full bg-[#111116] border border-zinc-800 text-[11px] text-zinc-300 rounded-lg p-1.5 pr-6 appearance-none focus:outline-none focus:border-indigo-500 cursor-pointer"
+              >
+                {['Super Admin', 'Admin', 'Product Manager', 'Engineering Manager', 'Developer', 'Customer Support', 'Viewer'].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+              <ChevronDown className="w-3 h-3 text-zinc-500 absolute right-2 top-2 pointer-events-none" />
+            </div>
           </div>
           
-          {/* User profile details */}
-          <div className="mt-4 flex items-center justify-between pt-3 border-t border-zinc-800/30">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700/80 shrink-0 overflow-hidden">
+          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/40">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 shrink-0 overflow-hidden">
                 {userPicture ? (
                   <img src={userPicture} alt={userName} className="w-full h-full object-cover" />
                 ) : (
-                  <User className="w-4 h-4 text-zinc-400" />
+                  <User className="w-3.5 h-3.5 text-zinc-400" />
                 )}
               </div>
               <div className="overflow-hidden">
-                <span className="text-xs font-semibold block text-zinc-200 truncate">{userName}</span>
-                <span className="text-[10px] text-zinc-500 truncate block">{userEmail}</span>
+                <span className="text-[11px] font-semibold block text-zinc-200 truncate leading-tight">{userName}</span>
+                <span className="text-[9px] text-zinc-500 truncate block font-mono">{userEmail}</span>
               </div>
             </div>
             <button 
               onClick={handleLogout}
               title="Log Out"
-              className="p-1.5 rounded-lg border border-zinc-850 hover:bg-red-500/10 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition"
+              className="p-1 rounded-lg border border-zinc-800 hover:bg-red-500/10 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -251,223 +302,118 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       </aside>
 
-      {/* Mobile Drawer Navigation Overlay */}
+      {/* Mobile Navigation Overlay Drawer */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-zinc-950/80 backdrop-blur-md transition-opacity" 
-            onClick={() => setMobileMenuOpen(false)}
-          />
-
-          {/* Drawer content */}
-          <aside className="relative w-72 max-w-[85vw] bg-zinc-900 border-r border-zinc-800 flex flex-col h-full z-10 shadow-2xl overflow-y-auto">
-            {/* Header: Logo + Close button */}
-            <div className="p-4 border-b border-zinc-800/50 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-zinc-950 flex items-center justify-center p-1 border border-indigo-500/20 shadow-lg shadow-purple-500/20 shrink-0 overflow-hidden">
-                  <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
-                </div>
-                <div>
-                  <span className="font-bold text-base tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">EchoOps</span>
-                  <span className="text-[9px] block text-zinc-500 font-mono tracking-wider">FEEDBACK OS</span>
-                </div>
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative w-72 max-w-[85vw] bg-[#080808] border-r border-zinc-800 flex flex-col h-full z-10 shadow-2xl overflow-y-auto">
+            <div className="p-4 border-b border-zinc-850 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="EchoOps" className="w-7 h-7 object-contain" />
+                <span className="font-bold text-base text-white">EchoOps</span>
               </div>
-              <button 
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition"
-              >
+              <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 text-zinc-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
-
-            {/* Workspace selector */}
-            <div className="px-4 py-3">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-zinc-950/40 border border-zinc-800/60 text-xs">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-indigo-400" />
-                  <span className="font-medium truncate max-w-[130px]">{workspace}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
-              </div>
-            </div>
-
-            {/* Nav Menu */}
-            <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition duration-200 ${
-                      isActive 
-                        ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/20' 
-                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-indigo-400' : 'text-zinc-500'}`} />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* Role simulator & User profile */}
-            <div className="p-4 border-t border-zinc-800/50 bg-zinc-950/20 mt-auto">
-              <div className="text-[10px] uppercase font-bold text-zinc-500 mb-2 flex items-center gap-1.5 font-mono">
-                <ShieldCheck className="w-3 h-3 text-indigo-400" />
-                Simulate Role
-              </div>
-              <div className="relative">
-                <select
-                  value={userRole}
-                  onChange={(e) => handleRoleChange(e.target.value)}
-                  className="w-full bg-zinc-900 border border-zinc-800 text-xs text-zinc-300 rounded-lg p-2 pr-8 appearance-none focus:outline-none focus:border-indigo-500 cursor-pointer"
-                >
-                  {roles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+            <nav className="flex-1 p-3 space-y-4">
+              {navSections.map((sec) => (
+                <div key={sec.title} className="space-y-1">
+                  <div className="text-[10px] font-mono text-zinc-500 uppercase px-2">{sec.title}</div>
+                  {sec.items.map((item) => (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-zinc-300 hover:bg-zinc-800"
+                    >
+                      <item.icon className="w-4 h-4 text-indigo-400" />
+                      <span>{item.name}</span>
+                    </Link>
                   ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-zinc-500 absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
-              
-              <div className="mt-4 flex items-center justify-between pt-3 border-t border-zinc-800/30">
-                <div className="flex items-center gap-2.5 overflow-hidden">
-                  <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700/80 shrink-0 overflow-hidden">
-                    {userPicture ? (
-                      <img src={userPicture} alt={userName} className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-4 h-4 text-zinc-400" />
-                    )}
-                  </div>
-                  <div className="overflow-hidden">
-                    <span className="text-xs font-semibold block text-zinc-200 truncate">{userName}</span>
-                    <span className="text-[10px] text-zinc-500 truncate block">{userEmail}</span>
-                  </div>
                 </div>
-                <button 
-                  onClick={handleLogout}
-                  title="Log Out"
-                  className="p-1.5 rounded-lg border border-zinc-850 hover:bg-red-500/10 hover:border-red-500/20 text-zinc-500 hover:text-red-400 transition"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
+              ))}
+            </nav>
           </aside>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#050505]">
         
-        {/* Header */}
-        <header className="h-16 bg-zinc-900/30 border-b border-zinc-800/40 flex items-center justify-between px-3 sm:px-6 backdrop-blur-md z-10 gap-2 sm:gap-4">
+        {/* Top Minimal Navigation Bar */}
+        <header className="h-14 bg-[#080808]/90 border-b border-zinc-800/70 flex items-center justify-between px-4 sm:px-6 backdrop-blur-md z-10 gap-3">
           
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            {/* Mobile Hamburger Menu Button */}
+          {/* Left: Breadcrumb & Title */}
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-xl bg-zinc-900 border border-zinc-800/80 text-zinc-300 hover:text-white hover:bg-zinc-800 shrink-0 transition"
-              title="Open Navigation Menu"
+              className="md:hidden p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             </button>
-
-            {/* Search bar */}
-            <form onSubmit={handleSearchSubmit} className="w-full max-w-xs sm:max-w-lg">
-              <div className="relative">
-                <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  placeholder="Ask feedback search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-950/50 border border-zinc-800/80 rounded-xl py-2 pl-9 pr-3 text-xs sm:text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition duration-200 placeholder-zinc-500 truncate"
-                />
-              </div>
-            </form>
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <span className="text-zinc-500">EchoOps</span>
+              <span className="text-zinc-600">/</span>
+              <span className="text-zinc-200 font-semibold">{getPageTitle()}</span>
+            </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            
-            {/* Dynamic Company Logo */}
-            <div className="hidden sm:block">
-              {(() => {
-                const target = searchQuery || workspace;
-                const cleanTarget = target.trim();
-                if (!cleanTarget) return null;
-                
-                const companyName = cleanTarget.split(' ')[0].replace(/[^a-zA-Z0-9]/g, '');
-                if (!companyName) return null;
-                
-                const brandDomains: { [key: string]: string } = {
-                  swiggy: 'swiggy.com',
-                  uber: 'uber.com',
-                  zomato: 'zomato.com',
-                  netflix: 'netflix.com',
-                  google: 'google.com',
-                  apple: 'apple.com',
-                  microsoft: 'microsoft.com',
-                  slack: 'slack.com',
-                  github: 'github.com',
-                  jira: 'atlassian.com',
-                  trello: 'trello.com',
-                  linear: 'linear.app',
-                  clickup: 'clickup.com',
-                  acme: 'acme.com'
-                };
-                
-                const cleanName = companyName.toLowerCase();
-                const domain = brandDomains[cleanName] || `${cleanName}.com`;
-                const logoUrl = `https://logo.clearbit.com/${domain}`;
-                
-                return <DynamicLogo imgUrl={logoUrl} label={companyName} key={companyName} />;
-              })()}
-            </div>
+          {/* Center: Command Palette Trigger Bar */}
+          <button
+            onClick={() => setCmdPaletteOpen(true)}
+            className="hidden sm:flex items-center gap-2 w-full max-w-sm px-3.5 py-1.5 rounded-xl bg-[#0D0D12] border border-zinc-800 hover:border-zinc-700 text-xs text-zinc-400 transition"
+          >
+            <Search className="w-3.5 h-3.5 text-zinc-500" />
+            <span className="flex-1 text-left truncate">Search feedback, problems, teams...</span>
+            <kbd className="text-[10px] font-mono uppercase bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">⌘ K</kbd>
+          </button>
 
-            {/* Notification drop */}
+          {/* Right Action Items */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            
+            {/* AI Assistant Button */}
+            <button
+              onClick={() => setAiDrawerOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/25 hover:bg-indigo-500/20 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 transition shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+              <span className="hidden sm:inline">Ask AI</span>
+            </button>
+
+            {/* Notification Bell */}
             <div className="relative">
               <button 
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="w-9 h-9 rounded-xl border border-zinc-800/85 bg-zinc-900/30 flex items-center justify-center hover:bg-zinc-800/60 transition relative shrink-0"
+                className="w-8 h-8 rounded-xl border border-zinc-800 bg-[#0D0D12] flex items-center justify-center hover:bg-zinc-800 transition relative"
               >
-                <Bell className="w-4 h-4 text-zinc-300" />
+                <Bell className="w-3.5 h-3.5 text-zinc-300" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center pulse-critical">
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-[9px] font-bold text-white flex items-center justify-center pulse-critical">
                     {unreadCount}
                   </span>
                 )}
               </button>
 
-              {/* Notification dropdown */}
+              {/* Notification Menu */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-zinc-900/95 border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl py-2 text-sm z-50">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-[#0B0B0F] border border-zinc-800 rounded-xl shadow-2xl backdrop-blur-xl py-2 text-xs z-50">
                   <div className="px-4 py-2 border-b border-zinc-800 flex justify-between items-center">
                     <span className="font-semibold text-zinc-200">Alerts & Notifications</span>
                     <button 
-                      onClick={() => {
-                        setNotifications(notifications.map(n => ({ ...n, read: true })));
-                      }}
-                      className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                      onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
+                      className="text-[11px] text-indigo-400 hover:text-indigo-300"
                     >
                       Mark all read
                     </button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-60 overflow-y-auto">
                     {notifications.map((n) => (
-                      <div 
-                        key={n.id} 
-                        className={`px-4 py-3 border-b border-zinc-800 last:border-b-0 flex gap-2 hover:bg-zinc-850 cursor-pointer ${!n.read ? 'bg-indigo-600/5' : ''}`}
-                      >
-                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'critical' ? 'bg-red-500' : (n.type === 'assignment' ? 'bg-indigo-400' : 'bg-zinc-500')}`} />
+                      <div key={n.id} className="px-4 py-2.5 border-b border-zinc-850 hover:bg-zinc-900/60 cursor-pointer flex gap-2">
+                        <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${n.type === 'critical' ? 'bg-red-500' : 'bg-indigo-400'}`} />
                         <div>
-                          <p className="text-xs text-zinc-300 font-medium">{n.text}</p>
-                          <span className="text-[10px] text-zinc-500 mt-1 block">{n.time}</span>
+                          <p className="text-zinc-300 font-medium">{n.text}</p>
+                          <span className="text-[9px] text-zinc-500">{n.time}</span>
                         </div>
                       </div>
                     ))}
@@ -476,17 +422,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               )}
             </div>
 
-            {/* AI Status Indicator */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              <span className="text-[10px] text-indigo-300 font-semibold tracking-wider uppercase font-mono">Feedback Pipeline Live</span>
+            {/* Workspace & User Profile */}
+            <div className="w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden cursor-pointer" onClick={() => router.push('/login')}>
+              {userPicture ? (
+                <img src={userPicture} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-3.5 h-3.5 text-zinc-400" />
+              )}
             </div>
-            
+
           </div>
         </header>
 
-        {/* Content body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-zinc-950/40">
+        {/* Content Viewport */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[#050505]">
           {children}
         </main>
       </div>
