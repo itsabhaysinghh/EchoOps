@@ -34,7 +34,7 @@ const fadeUp = {
     transition: {
       delay: i * 0.15,
       duration: 0.6,
-      ease: [0.22, 1, 0.36, 1]
+      ease: [0.22, 1, 0.36, 1] as const
     }
   })
 };
@@ -140,7 +140,7 @@ export default function HeroSection() {
               exit={{ x: '100%' }}
               transition={{
                 duration: mobileMenuOpen ? 0.45 : 0.35,
-                ease: mobileMenuOpen ? [0.22, 1, 0.36, 1] : [0.55, 0, 1, 0.45]
+                ease: mobileMenuOpen ? ([0.22, 1, 0.36, 1] as const) : ([0.55, 0, 1, 0.45] as const)
               }}
               className="fixed top-0 right-0 z-50 flex flex-col justify-between"
               style={{
@@ -233,7 +233,7 @@ export default function HeroSection() {
             }}
             className="mb-5 font-bold"
           >
-            <span style={{ whiteSpace: 'nowrap' }}>
+            <span className="inline-block">
               Lock
               <Zap 
                 size={24} 

@@ -427,40 +427,40 @@ export default function Login() {
       <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-purple-500/20 rounded-full blur-[150px] pointer-events-none z-0" />
 
       {/* Top Navbar Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 max-w-[1280px] mx-auto px-6 py-5 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <svg width="28" height="28" viewBox="0 0 256 256" fill="#F2F2EE" xmlns="http://www.w3.org/2000/svg">
+      <div className="absolute top-0 left-0 right-0 z-20 max-w-[1280px] mx-auto px-4 sm:px-6 py-3 sm:py-5 flex justify-between items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <svg width="24" height="24" viewBox="0 0 256 256" fill="#F2F2EE" xmlns="http://www.w3.org/2000/svg" className="sm:w-7 sm:h-7">
             <path d="M 64 128 L 64.5 128 L 32 95 L 0 64 L 0 0 L 64 0 L 128 64 L 128 64.5 L 161 32 L 192 0 L 256 0 L 256 64 L 192 128 L 128 128 L 128 192 L 96 223 L 63.5 256 L 0 256 L 0 192 Z M 256 192 L 224 223 L 191.5 256 L 128 256 L 128 192 L 192 128 L 256 128 Z" />
           </svg>
-          <span className="text-sm font-bold tracking-tight text-white font-mono uppercase">EchoOps Vault</span>
+          <span className="text-xs sm:text-sm font-bold tracking-tight text-white font-mono uppercase truncate">EchoOps Vault</span>
         </div>
         <a
           href="/password-hero"
-          className="text-xs font-semibold px-4 py-2 rounded-full transition-all hover:scale-105 shadow-md flex items-center gap-1.5"
+          className="text-[10px] sm:text-xs font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all hover:scale-105 shadow-md flex items-center gap-1 sm:gap-1.5 shrink-0"
           style={{ backgroundColor: '#7342E2', color: '#FFFFFF' }}
         >
-          <Sparkles className="w-3.5 h-3.5" /> View Vault Landing Hero
+          <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden xs:inline">View</span> Vault Hero
         </a>
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-md relative z-10 space-y-6 mt-12 sm:mt-0">
+      <div className="w-full max-w-md relative z-10 space-y-6 mt-16 sm:mt-0 px-2 sm:px-0">
         
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex w-16 h-16 rounded-2xl bg-zinc-950/80 items-center justify-center p-2.5 border border-[#7342E2]/30 shadow-2xl shadow-[#7342E2]/30 mb-2 overflow-hidden backdrop-blur-md">
+          <div className="inline-flex w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-zinc-950/80 items-center justify-center p-2 sm:p-2.5 border border-[#7342E2]/30 shadow-2xl shadow-[#7342E2]/30 mb-1 sm:mb-2 overflow-hidden backdrop-blur-md">
             <img src="/logo.png" alt="EchoOps Logo" className="w-full h-full object-contain" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-100 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-zinc-100 via-indigo-200 to-purple-300 bg-clip-text text-transparent">
             Welcome to EchoOps
           </h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-xs sm:text-sm text-zinc-400">
             The AI-powered Feedback Operating System
           </p>
         </div>
 
         {/* Login Card */}
-        <div className="glass-panel p-8 rounded-3xl border border-zinc-800/80 shadow-2xl backdrop-blur-xl relative bg-zinc-950/80">
+        <div className="glass-panel p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-zinc-800/80 shadow-2xl backdrop-blur-xl relative bg-zinc-950/80">
 
           
           {/* Overlay loading/success screen */}
