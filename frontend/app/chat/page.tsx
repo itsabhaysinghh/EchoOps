@@ -317,9 +317,9 @@ export default function ChatCopilot() {
                     <div key={m.id} className="space-y-3">
                       <div className="flex items-center gap-2 text-xs font-mono">
                         <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
-                          isBot ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/30' : 'bg-white/[0.06] text-white'
+                          isBot ? 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/30' : 'bg-white/[0.06] text-zinc-300'
                         }`}>
-                          {isBot ? '✦' : 'You'}
+                          {isBot ? '✦' : <User className="w-3 h-3" />}
                         </span>
                         <span className="font-bold text-zinc-300">{isBot ? 'EchoOps AI Analyst' : 'You'}</span>
                         {isBot && (
