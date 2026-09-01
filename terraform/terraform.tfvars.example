@@ -1,0 +1,59 @@
+# ==============================================================================
+# EchoOps Terraform Variables (Example Configuration)
+# Copy this file to `terraform.tfvars` and customize your values.
+# ==============================================================================
+
+aws_region  = "us-east-1"
+environment = "production"
+project_name = "echoops"
+
+# Custom Domain & SSL (Optional)
+# domain_name         = "echoops.yourcompany.com"
+# acm_certificate_arn = "arn:aws:acm:us-east-1:123456789012:certificate/xxxx-xxxx-xxxx"
+
+# Networking
+vpc_cidr               = "10.0.0.0/16"
+availability_zones     = ["us-east-1a", "us-east-1b"]
+public_subnet_cidrs    = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs   = ["10.0.10.0/24", "10.0.11.0/24"]
+database_subnet_cidrs  = ["10.0.20.0/24", "10.0.21.0/24"]
+single_nat_gateway     = true # Set to false in Multi-AZ production for max resilience
+
+# Compute - FastAPI Backend
+backend_cpu           = 512
+backend_memory        = 1024
+backend_desired_count = 2
+backend_min_count     = 1
+backend_max_count     = 6
+
+# Compute - Next.js Frontend
+frontend_cpu           = 256
+frontend_memory        = 512
+frontend_desired_count = 2
+frontend_min_count     = 1
+frontend_max_count     = 4
+
+# Database - RDS PostgreSQL
+db_instance_class        = "db.t4g.micro"
+db_allocated_storage     = 20
+db_max_allocated_storage = 100
+db_name                  = "echoops"
+db_username              = "echoops_admin"
+db_multi_az              = false # Set to true for production high-availability
+db_deletion_protection   = false
+
+# Redis (ElastiCache)
+enable_redis          = true
+redis_node_type       = "cache.t4g.micro"
+redis_num_cache_nodes = 1
+
+# Monitoring & Logging
+log_retention_days = 30
+alarm_email        = "alerts@yourcompany.com"
+
+# Custom Tags
+tags = {
+  Owner       = "Platform-Team"
+  CostCenter  = "Engineering"
+  Repository  = "EchoOps"
+}

@@ -149,27 +149,31 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const navSections = [
     {
-      title: 'Overview',
+      title: 'Intelligence',
       items: [
-        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-        { name: 'Problems', href: '/issues/1', icon: CircleAlert },
-        { name: 'Feedback', href: '/onboarding', icon: MessageSquare },
-        { name: 'Voice Intelligence', href: '/voice', icon: Mic },
-        { name: 'Feature Requests', href: '/features', icon: Lightbulb },
-        { name: 'AI Insights', href: '/chat', icon: Sparkles }
+        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        { name: 'Problems', href: '/problems', icon: CircleAlert },
+        { name: 'Feedback', href: '/feedback', icon: MessageSquare },
+        { name: 'Voice', href: '/voice', icon: Mic },
+        { name: 'Insights', href: '/insights', icon: Sparkles },
+        { name: 'Features', href: '/features', icon: Lightbulb },
+        { name: 'AI Copilot', href: '/ai', icon: Bot }
       ]
     },
     {
       title: 'Operations',
       items: [
-        { name: 'Team Work', href: '/team', icon: Users },
+        { name: 'Teams', href: '/teams', icon: Users },
+        { name: 'Releases', href: '/releases', icon: Layers },
         { name: 'Integrations', href: '/integrations', icon: Plug }
       ]
     },
     {
-      title: 'Reports',
+      title: 'Analytics & Admin',
       items: [
-        { name: 'Weekly Reports', href: '/reports', icon: FileText }
+        { name: 'Reports', href: '/reports', icon: FileText },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Settings', href: '/settings', icon: Settings }
       ]
     }
   ];
@@ -178,14 +182,19 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // Breadcrumb formatting helper
   const getPageTitle = () => {
-    if (pathname === '/') return 'Dashboard';
-    if (pathname.startsWith('/issues')) return 'Problem Detail';
+    if (pathname === '/' || pathname === '/dashboard') return 'Customer Intelligence';
+    if (pathname.startsWith('/problems') || pathname.startsWith('/issues')) return 'Problems & Evidence';
+    if (pathname === '/feedback' || pathname === '/vault') return 'Feedback Inbox';
     if (pathname === '/voice') return 'Voice Intelligence';
-    if (pathname === '/chat') return 'AI Copilot Chat';
+    if (pathname === '/insights') return 'AI Insights';
     if (pathname === '/features') return 'Feature Requests';
-    if (pathname === '/reports') return 'Weekly Reports';
+    if (pathname === '/ai' || pathname === '/chat') return 'AI Copilot';
+    if (pathname === '/teams' || pathname === '/team') return 'Team Operations';
+    if (pathname === '/releases') return 'Release Impact';
     if (pathname === '/integrations') return 'Integrations & Jira';
-    if (pathname === '/team') return 'Team Workload';
+    if (pathname === '/reports') return 'Weekly Reports';
+    if (pathname === '/analytics') return 'Product Analytics';
+    if (pathname === '/settings') return 'Workspace Settings';
     if (pathname === '/onboarding') return 'Onboarding Wizard';
     return 'EchoOps';
   };

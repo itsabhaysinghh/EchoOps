@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intelligence Designed To Evolve</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- OnlineWebFonts: BubbledotICG-FinePos -->
+  <link
+    href="https://db.onlinewebfonts.com/c/8cb707a9b8a73f8a7403336b861c3074?family=BubbledotICG-FinePos"
+    rel="stylesheet"
+  />
+
+  <!-- Font Awesome 6.5.2 -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+    crossorigin="anonymous"
+    referrerpolicy="no-referrer"
+  />
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Full-viewport cover video -->
+  <div class="bg">
+    <video class="bg-video" autoplay muted loop playsinline>
+      <source
+        src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260809_012548_ef22562c-c0ae-4816-ad9d-f8922af4e6a7.mp4"
+        type="video/mp4"
+      />
+    </video>
+  </div>
+
+  <!-- Single Viewport Page Layout -->
+  <div class="page">
+    <!-- Header -->
+    <header class="header">
+      <!-- Logo Button -->
+      <a href="#" class="logo-btn" aria-label="Home">
+        <img src="assets/logo.webp" alt="" width="52" height="52" class="logo-img" />
+      </a>
+
+      <!-- Desktop Nav Pill -->
+      <nav class="nav-pill" aria-label="Main navigation">
+        <a href="#" class="nav-link active">Home</a>
+        <a href="#" class="nav-link">Product</a>
+        <a href="#" class="nav-link">Case Studies</a>
+        <a href="#" class="nav-link">Contact</a>
+      </nav>
+
+      <!-- Desktop Sign In Button -->
+      <a href="#" class="sign-in-btn">Sign in</a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="mobile-burger" id="burgerBtn" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+      </button>
+    </header>
+
+    <!-- Mobile Navigation Overlay & Sheet -->
+    <div class="mobile-overlay" id="mobileOverlay" hidden></div>
+    <div class="mobile-menu-sheet" id="mobileMenu" hidden>
+      <nav class="mobile-nav-links">
+        <a href="#" class="mobile-link active">Home</a>
+        <a href="#" class="mobile-link">Product</a>
+        <a href="#" class="mobile-link">Case Studies</a>
+        <a href="#" class="mobile-link">Contact</a>
+      </nav>
+      <a href="#" class="mobile-sign-in">Sign in</a>
+    </div>
+
+    <!-- Hero Center Section -->
+    <main class="hero">
+      <!-- Trust Row -->
+      <div class="trust-row anim" style="--d: 0.05s">
+        <div class="avatar-ring avatar-1">
+          <div class="avatar-inner">
+            <i class="fa-brands fa-microsoft"></i>
+          </div>
+        </div>
+        <div class="avatar-ring avatar-2">
+          <div class="avatar-inner">
+            <i class="fa-brands fa-amazon"></i>
+          </div>
+        </div>
+        <div class="avatar-ring avatar-3">
+          <div class="avatar-inner">
+            <i class="fa-brands fa-google"></i>
+          </div>
+        </div>
+        <div class="trust-pill">
+          <span class="trust-text">Trusted by 2000+ Enterprises</span>
+        </div>
+      </div>
+
+      <!-- Main Display Headline -->
+      <h1 class="headline">
+        <span class="line-1">Intelligence</span>
+        <span class="line-2">Designed To Evolve</span>
+      </h1>
+
+      <!-- Subhead Paragraph -->
+      <p class="subhead anim" style="--d: 0.28s">
+        Build applications that reason, adapt and collaborate using a modular AI platform designed for production.
+      </p>
+
+      <!-- Call to Action -->
+      <div class="cta-wrapper anim-pulse" style="--d: 0.4s">
+        <a href="#" class="cta-btn">Get Started</a>
+      </div>
+    </main>
+
+    <!-- Stats Footer -->
+    <footer class="stats-footer">
+      <div class="stat-item anim" style="--d: 0.5s">
+        <div class="stat-top">
+          <span class="stat-icon">&lt;</span>
+          <span class="stat-val" data-target="120" data-suffix="ms" data-decimals="0">0ms</span>
+        </div>
+        <span class="stat-label">Inference Time</span>
+      </div>
+
+      <div class="stat-item anim" style="--d: 0.58s">
+        <div class="stat-top">
+          <span class="stat-icon">%</span>
+          <span class="stat-val" data-target="99.99" data-suffix="%" data-decimals="2">0.00%</span>
+        </div>
+        <span class="stat-label">Platform Uptime</span>
+      </div>
+
+      <div class="stat-item anim" style="--d: 0.66s">
+        <div class="stat-top">
+          <span class="stat-icon">*</span>
+          <span class="stat-val" data-target="24" data-suffix="/7" data-decimals="0">0/7</span>
+        </div>
+        <span class="stat-label">Autonomous Runtime</span>
+      </div>
+
+      <div class="stat-item anim" style="--d: 0.74s">
+        <div class="stat-top">
+          <span class="stat-icon">#</span>
+          <span class="stat-val" data-target="2.4" data-suffix="M" data-decimals="1">0.0M</span>
+        </div>
+        <span class="stat-label">Context Windows</span>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Sign In Modal Overlay -->
+  <div class="auth-overlay" id="authModal" hidden aria-hidden="true">
+    <div class="auth-card">
+      <button class="auth-close" id="closeAuthModal" aria-label="Close sign in modal">&times;</button>
+      <div class="auth-header">
+        <img src="assets/logo.webp" alt="EchoOps Logo" class="auth-logo" />
+        <h2 class="auth-title">Welcome Back</h2>
+        <p class="auth-subtitle">Sign in to access your AI intelligence workspace</p>
+      </div>
+
+      <div class="oauth-buttons">
+        <button type="button" class="oauth-btn">
+          <i class="fa-brands fa-google"></i> Continue with Google
+        </button>
+        <button type="button" class="oauth-btn">
+          <i class="fa-brands fa-github"></i> Continue with GitHub
+        </button>
+      </div>
+
+      <div class="auth-divider">
+        <span>or sign in with email</span>
+      </div>
+
+      <form class="auth-form" id="authForm">
+        <div class="form-group">
+          <label for="authEmail">Email address</label>
+          <input type="email" id="authEmail" required placeholder="name@company.com" autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <div class="label-row">
+            <label for="authPassword">Password</label>
+            <a href="#" class="forgot-link">Forgot?</a>
+          </div>
+          <input type="password" id="authPassword" required placeholder="••••••••" autocomplete="current-password" />
+        </div>
+
+        <button type="submit" class="auth-submit-btn">Sign In to Dashboard</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" id="toast" hidden>
+    <i class="fa-solid fa-circle-check toast-icon"></i>
+    <span class="toast-message" id="toastMsg">Signed in successfully!</span>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
